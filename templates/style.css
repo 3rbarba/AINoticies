@@ -1,0 +1,103 @@
+/* ... estilos existentes do body, container, h1 ... */
+h1 {
+    font-family: 'Ancizar Serif', serif; /* Usando a fonte importada */
+    color: #333;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+
+main {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px; /* Arredonda um pouco as bordas da caixa */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Adiciona uma leve sombra para dar profundidade */
+    margin-bottom: 20px;
+    text-align: center; /* Centraliza o texto dentro do main */
+    border: 1px solid #ddd; /* Adiciona uma borda cinza clara */
+}
+
+
+main h2#titulo-noticia {
+    color: #28a745; /* Cor para o título da notícia */
+    margin-top: 15px; /* Adicione um pouco de espaço acima */
+    margin-bottom: 10px;
+    font-size: 24px;
+    text-align: center; /* Garante que o título também esteja centralizado */
+}
+
+main p#chamada-noticia {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    font-weight: bold; /* Adicionando um peso maior para a chamada */
+    text-align: center; /* Centraliza a chamada */
+}
+
+main p#resumo-noticia {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 10px;
+    text-align: center; /* Centraliza o resumo */
+}
+
+main p#categoria-noticia {
+    color: #6c757d; /* Cor para a categoria */
+    font-style: italic;
+    margin-bottom: 10px;
+    text-align: center; /* Centraliza a categoria */
+}
+
+main img#imagem-noticia {
+    max-width: 80%; /* Reduzi um pouco a largura da imagem */
+    height: auto;
+    display: block;
+    margin: 15px auto; /* Centraliza a imagem horizontalmente */
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    margin-bottom: 15px;
+}
+
+/* ... seus outros estilos CSS ... */
+/* ... seus outros estilos CSS ... */
+
+#carregando-noticia {
+    color: #777;
+    font-size: 1.4em; /* Ajuste o tamanho conforme necessário */
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: 'Ancizar Serif', serif; /* Usando a fonte importada */
+}
+
+.pontos {
+    display: inline-block;
+    white-space: nowrap; /* Evita que os pontos quebrem de linha */
+}
+
+.pontos span {
+    display: inline-block;
+    width: 0.2em; /* Ajuste o tamanho dos pontos conforme necessário */
+    height: 0.2em; /* Ajuste o tamanho dos pontos conforme necessário */
+    border-radius: 50%;
+    background-color: #777;
+    margin: 0 0.15em; /* Ajuste a margem entre os pontos conforme necessário */
+    animation: pular 0.5s infinite alternate;
+}
+
+.pontos span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.pontos span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes pular {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-0.1em); /* Ajuste a altura do pulo conforme necessário */
+    }
+}

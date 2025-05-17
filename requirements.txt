@@ -1,0 +1,7 @@
+python-dotenv
+google-generativeai
+pytrends
+requests
+beautifulsoup4
+Flask
+newspaper3k
