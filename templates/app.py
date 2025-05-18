@@ -1,6 +1,8 @@
 import os
 import time
 import warnings
+import re
+import traceback
 from datetime import date
 
 from dotenv import load_dotenv
@@ -28,7 +30,6 @@ INITIAL_BACKOFF = 2  # segundos
 # Carregamento das Variáveis de Ambiente
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Inicialização do Modelo Gemini
 gemini_model = None
@@ -86,7 +87,7 @@ def identificar_topicos_em_alta():
             para identificar os 50 tópicos mais relevantes e comentados da semana.
             Organize os tópicos por ordem de relevância e atualidade, com base na quantidade e no entusiasmo das notícias e discussões sobre eles.
             Filtre temas sensíveis ou potencialmente ofensivos.
-            Para cada tópico, tente identificar sua categoria principal (ex: política, entretenimento, esportes, tecnologia, etc.).
+            Para cada tópico, tente identificar sua categoria principal
             Formato de saída desejado:
             [Número]. **[Tópico]** (Categoria: [categoria]): [Informações adicionais]
         """,
@@ -110,58 +111,48 @@ def identificar_topicos_em_alta():
                 if len(partes_topico) > 1:
                     topico_completo = partes_topico[1].strip()
                     topico = topico_completo
-                    categoria = "Sem Categoria"
-                    if "(" in topico_completo and ")" in topico_completo:
-                        inicio_categoria = topico_completo.find('(') + 1
-                        fim_categoria = topico_completo.find(')')
-                        if inicio_categoria < fim_categoria:
-                            categoria_part = topico_completo[inicio_categoria:fim_categoria]
-                            if ":" in categoria_part:
-                                chave, valor = map(str.strip, categoria_part.split(':'))
-                                if chave.lower() == 'categoria':
-                                    categoria = valor
-                                    topico = topico_completo[:topico_completo.find('(')].strip()
-                                else:
-                                    topico = topico_completo[:topico_completo.find('(')].strip()
-                            else:
-                                categoria = categoria_part
-                                topico = topico_completo[:topico_completo.find('(')].strip()
-                        else:
-                            topico = topico_completo
+                    categoria = partes_topico[2].strip() if len(partes_topico) > 2 else "A DEFINIR"
+                    categoria = categoria.split('\n')
+                    for categoria in categoria:
+                        inicio = categoria.find('(')
+                        fim = categoria.find(')')
+                        if inicio != -1 and fim != -1 and inicio < fim:
+                            texto_entre_parenteses = categoria[inicio:fim+1].strip()
+                            categoria = texto_entre_parenteses
                     topicos_com_categoria.append({'tópico': topico, 'categoria': categoria})
-
     print("Tópicos identificados:", topicos_com_categoria)
-
-    if not topicos_com_categoria:
-        topicos_com_categoria.append({
-            'tópico': 'Tecnologia no Brasil',
-            'categoria': 'Tecnologia'
-        })
-
-    return topicos_com_categoria[:5]
+  
+    return topicos_com_categoria[:50]
+# (ajustar conforme necessário)
 
 # -------------------- Agente 2: Pesquisador de Notícias --------------------
-def pesquisar_ultimas_noticias(topico):
+def pesquisar_ultimas_noticias(topico, categoria):
     """Pesquisa as últimas notícias relevantes sobre um tópico usando um Agente com busca do Google."""
     buscador_noticias = Agent(
         name="agente_pesquisador_noticias",
         model="gemini-2.0-flash",
         instruction=f"""
             Você é um especialista em pesquisa de notícias. Sua tarefa é usar a ferramenta de busca do google (google_search)
-            para encontrar as 3 notícias mais relevantes e publicadas nos últimos 7 dias sobre o tópico: '{topico}'.
+            para encontrar as 3 notícias mais relevantes e publicadas nos últimos 7 dias sobre o tópico: '{topico}' categoria: '{categoria}'.
             Se não encontrar notícias nas últimas 24 horas, considere até a última semana.
             Para cada notícia, apresente o título, um breve resumo e a fonte.
-            Priorize fontes confiáveis e atuais.
+            Priorize fontes confiáveis e atuais. Se você não encontrar notícias relevantes, retorne uma mensagem informando que não encontrou 
+            e essa mensagem tem que ser no formado da saida para não dá erro.
+            Garanta que a noticia tenha uma data
+            Formato de entrada:
+            Tópico: [tópico]
+            Categoria: [categoria]
             Formato de saída desejado para cada notícia:
             - Título: [título da notícia]
               Fonte: [nome da fonte]
               Resumo: [breve resumo da notícia]
+              Data: [Data da noticia]
         """,
         description="Agente que pesquisa notícias relevantes sobre um tópico.",
         tools=[google_search]
     )
 
-    entrada_do_agente = f"Tópico: {topico}"
+    entrada_do_agente = f"Tópico: {topico}, Categoria: {categoria}"
     resposta_do_agente = call_agent(buscador_noticias, entrada_do_agente)
     print("Resposta do Agente Pesquisador de Notícias:")
     print(resposta_do_agente)
@@ -179,21 +170,28 @@ def pesquisar_ultimas_noticias(topico):
                     fonte_resumo = detalhes[1].strip().split('\n  Resumo:')
                     if len(fonte_resumo) == 2:
                         fonte = fonte_resumo[0].strip()
-                        resumo = fonte_resumo[1].strip()
-                        noticias.append({'título': titulo, 'fonte': fonte, 'resumo': resumo})
+                        resumo_data = fonte_resumo[1].strip().split('\n  Data:')
+                        resumo = resumo_data[0].strip()
+                        data = resumo_data[1].strip() if len(resumo_data) > 1 else "Data não disponível"
+                        noticias.append({'título': titulo, 'fonte': fonte, 'resumo': resumo, 'data': data})
         else:
             linhas = resposta_do_agente.strip().split('\n')
-            titulo_atual = fonte_atual = resumo_atual = ""
+            titulo_atual = fonte_atual = resumo_atual = data_atual = ""
 
             for linha in linhas:
                 linha = linha.strip()
                 if linha.startswith("Título:") or linha.startswith("- Título:"):
                     if titulo_atual:
                         if resumo_atual:
-                            noticias.append({'título': titulo_atual, 'fonte': fonte_atual or "Desconhecida", 'resumo': resumo_atual})
+                            noticias.append({
+                                'título': titulo_atual, 
+                                'fonte': fonte_atual or "Desconhecida", 
+                                'resumo': resumo_atual,
+                                'data': data_atual or "Data não disponível"
+                            })
 
                     titulo_atual = linha.replace("Título:", "").replace("- Título:", "").strip()
-                    fonte_atual = resumo_atual = ""
+                    fonte_atual = resumo_atual = data_atual = ""
 
                 elif linha.startswith("Fonte:") or linha.startswith("  Fonte:"):
                     fonte_atual = linha.replace("Fonte:", "").replace("  Fonte:", "").strip()
@@ -201,24 +199,23 @@ def pesquisar_ultimas_noticias(topico):
                 elif linha.startswith("Resumo:") or linha.startswith("  Resumo:"):
                     resumo_atual = linha.replace("Resumo:", "").replace("  Resumo:", "").strip()
 
+                elif linha.startswith("Data:") or linha.startswith("  Data:"):
+                    data_atual = linha.replace("Data:", "").replace("  Data:", "").strip()
+
             if titulo_atual and resumo_atual:
-                noticias.append({'título': titulo_atual, 'fonte': fonte_atual or "Desconhecida", 'resumo': resumo_atual})
-
-    if not noticias:
-        print(f"AVISO: Não foram encontradas notícias para o tópico '{topico}'. Criando uma notícia fictícia para teste.")
-        noticias.append({
-            'título': f"Notícias recentes sobre {topico}",
-            'fonte': "Portal de Notícias",
-            'resumo': f"Este é um resumo gerado automaticamente para o tópico '{topico}' para permitir o teste do fluxo completo do sistema."
-        })
-
+                noticias.append({
+                    'título': titulo_atual, 
+                    'fonte': fonte_atual or "Desconhecida", 
+                    'resumo': resumo_atual,
+                    'data': data_atual or "Data não disponível"
+                })
     return noticias
 
 # -------------------- Agente 3: Editor de Conteúdo --------------------
 def editar_conteudo(noticias):
     """Resumi os fatos apurados, criando título, chamada e resumo usando um Agente."""
     editor_conteudo = Agent(
-        name="agente_editor_conteudo",
+        name="agente_editor_conteudo", 
         model="gemini-2.0-flash",
         instruction="""
             Você é um editor de notícias experiente. Dada uma lista de notícias com título, fonte e resumo,
@@ -228,13 +225,14 @@ def editar_conteudo(noticias):
             - Um resumo conciso do conteúdo (máximo 50 palavras).
             - Até 3 palavras-chave relevantes para uma imagem.
             - Uma emoção desejada para a imagem (ex: neutro, positivo, alerta).
-
+            - Verificar o a data da noticia
             Formato de saída desejado:
             Título: [título]
             Chamada de Capa: [chamada]
             Resumo: [resumo]
             Palavras-chave para imagem: [palavras-chave]
             Emoção desejada para imagem: [emoção]
+            Data: [Data-noticia]
         """,
         description="Agente que edita e resume notícias.",
         tools=[] # Este agente não precisa de ferramentas externas
@@ -246,6 +244,7 @@ def editar_conteudo(noticias):
             Título: {primeira_noticia['título']}
             Fonte: {primeira_noticia['fonte']}
             Resumo: {primeira_noticia['resumo']}
+            Data: {primeira_noticia['data']}
         """
         resposta_do_agente = call_agent(editor_conteudo, entrada_do_agente)
         print("Resposta do Agente Editor de Conteúdo:")
@@ -269,8 +268,10 @@ def editar_conteudo(noticias):
                             conteudo_editado['palavras_chave_imagem'] = [p.strip() for p in valor.split(',')]
                         elif chave == 'Emoção desejada para imagem':
                             conteudo_editado['emocao_imagem'] = valor
+                        elif chave == 'Data':
+                            conteudo_editado['data'] = valor
 
-        if not all(key in conteudo_editado for key in ['título', 'chamada', 'resumo', 'palavras_chave_imagem', 'emocao_imagem']):
+        if not all(key in conteudo_editado for key in ['título', 'chamada', 'resumo', 'palavras_chave_imagem', 'emocao_imagem', 'data']):
             print("AVISO: Alguns campos estão faltando na edição. Preenchendo valores padrão.")
             if 'título' not in conteudo_editado:
                 conteudo_editado['título'] = primeira_noticia['título']
@@ -282,24 +283,120 @@ def editar_conteudo(noticias):
                 conteudo_editado['palavras_chave_imagem'] = ["notícia", "atualidade"]
             if 'emocao_imagem' not in conteudo_editado:
                 conteudo_editado['emocao_imagem'] = "neutro"
+            if 'data' not in conteudo_editado:
+                conteudo_editado['data'] = primeira_noticia.get('data', 'Data não disponível')
 
         return conteudo_editado
     return {}
 
 # -------------------- Agente 4: Gerador de Imagens --------------------
-def gerar_imagens(conteudo_editado):
-    """Gera URLs de placeholder para imagens."""
-    imagens_geradas = []
+def revisar_geral(conteudo_editado):
+    """Revisa o conteúdo para qualidade usando um Agente."""
+    revisor_geral = Agent(
+        name="agente_revisor_geral",
+        model="gemini-2.0-flash",
+        instruction="""
+            Você é um revisor de conteúdo editorial. Sua tarefa é revisar o título, a chamada de capa e o resumo de uma notícia.
+            Verifique a coerência, a ortografia, o tom adequado e a adequação para o público.
+            Faça as correções necessárias e retorne o conteúdo revisado no mesmo formato.
+
+            Formato de entrada:
+            Título: [título]
+            Chamada: [chamada]
+            Resumo: [resumo]
+
+            Formato de saída desejado:
+            Título: [título revisado]
+            Chamada: [chamada revisada]
+            Resumo: [resumo revisado]
+        """,
+        description="Agente que revisa o conteúdo gerado.",
+        tools=[]
+    )
+
     if conteudo_editado:
-        titulo = conteudo_editado.get('título', 'Notícia')
-        palavras_chave = conteudo_editado.get('palavras_chave_imagem', ['notícia'])
-        emocao = conteudo_editado.get('emocao_imagem', 'neutro')
+        entrada_do_agente = f"""
+            Título: {conteudo_editado.get('título', '')}
+            Chamada: {conteudo_editado.get('chamada', '')}
+            Resumo: {conteudo_editado.get('resumo', '')}
+        """
+        resposta_do_agente = call_agent(revisor_geral, entrada_do_agente)
+        print("Resposta do Agente Revisor Geral:")
+        print(resposta_do_agente)
 
-        prompt_imagem = f"Uma imagem relacionada a '{titulo}', com as palavras-chave: {', '.join(palavras_chave)}, transmitindo uma emoção '{emocao}'."
-        url_imagem = "URL_IMAGEM_PLACEHOLDER" # Substituir pela lógica real de geração de imagem
-        imagens_geradas.append({'título': titulo, 'url_imagem': url_imagem})
-    return imagens_geradas
+        noticia_revisada = {}
+        if resposta_do_agente:
+            for linha in resposta_do_agente.split('\n'):
+                linha = linha.strip()
+                if ':' in linha:
+                    partes = linha.split(':', 1)
+                    if len(partes) == 2:
+                        chave, valor = partes[0].strip(), partes[1].strip()
+                        noticia_revisada[chave] = valor
 
+        if not noticia_revisada:
+            print("AVISO: A revisão falhou. Mantendo o conteúdo original.")
+            noticia_revisada = {
+                'Título': conteudo_editado.get('título', ''),
+                'Chamada': conteudo_editado.get('chamada', ''),
+                'Resumo': conteudo_editado.get('resumo', '')
+            }
+
+        return noticia_revisada
+    return {}
+#--------------------- Agente coletor de noticias --------------------
+def agente_coletor_detalhado(topico: str, completo: bool, noticias: str, categoria: str):
+    """Coleta notícias detalhadas sobre um tópico usando um Agente com busca do Google."""
+
+    @app.route('/gerar_noticia_completa', methods=['GET'])
+    def gerar_noticia_completa_endpoint():
+        print("Iniciando o fluxo de geração de notícia completa...")
+        try:
+            topicos_em_alta = identificar_topicos_em_alta()
+            if topicos_em_alta:
+                primeiro_topico_info = topicos_em_alta[0]
+                primeiro_topico = primeiro_topico_info['tópico']
+                categoria_topico = primeiro_topico_info.get('categoria')
+                noticias_pesquisadas = pesquisar_ultimas_noticias(primeiro_topico, categoria_topico)
+                
+                if noticias_pesquisadas:
+                    # Coletar detalhes usando o novo agente
+                    detalhes_noticia = agente_coletor_detalhado(
+                        primeiro_topico, 
+                        True, 
+                        str(noticias_pesquisadas), 
+                        categoria_topico
+                    )
+                    
+                    conteudo_editado = editar_conteudo(noticias_pesquisadas[:1])
+                    noticia_revisada = revisar_geral(conteudo_editado)
+                    
+                    # Combinar os detalhes coletados com a notícia revisada
+                    noticia_final = {
+                        **noticia_revisada, 
+                        'categoria': categoria_topico,
+                        'noticia_completa': detalhes_noticia.get('noticia_completa', ''),
+                        'fonte': detalhes_noticia.get('fonte', ''),
+                        'data': detalhes_noticia.get('data', '')
+                    }
+                    
+                    publicado = publicar_noticia(noticia_final)
+                    return jsonify({
+                        "status": "Fluxo de geração de notícia completo", 
+                        "resultado": noticia_final
+                    })
+                else:
+                    return jsonify({"erro": f"Não foram encontradas notícias para o tópico '{primeiro_topico}'"})
+            else:
+                return jsonify({"erro": "Não foi possível identificar tópicos em alta"})
+        except Exception as e:
+            error_traceback = traceback.format_exc()
+            print(f"ERRO: {str(e)}")
+            print(error_traceback)
+            return jsonify({
+                "erro": f"Erro no processamento: {str(e)}", 
+                "detalhes": error_traceback
+            })
 # -------------------- Agente 5: Revisor Geral --------------------
 def revisar_geral(conteudo_editado, imagens_geradas):
     """Revisa o conteúdo e a imagem (placeholder) para qualidade usando um Agente."""
@@ -372,6 +469,8 @@ def publicar_noticia(noticia_final):
         print("\n--- NOVO ARTIGO ---")
         print(f"Título: {noticia_final.get('Título', '')}")
         print(f"Chamada: {noticia_final.get('Chamada', '')}")
+        print(f"Texto Completo: {noticia_final.get('noticia_completa', '')}")
+        print(f"Fonte: {noticia_final.get('fonte', 'Desconhecida')}")   
         print(f"Resumo: {noticia_final.get('Resumo', '')}")
         print(f"Categoria: {noticia_final.get('categoria', 'A DEFINIR')}") # A categoria vem do Agente 1
         print(f"URL da Imagem: {noticia_final.get('URL da Imagem', 'URL_IMAGEM_PLACEHOLDER')}")
@@ -415,13 +514,19 @@ def gerar_noticia_completa_endpoint():
         if topicos_em_alta:
             primeiro_topico_info = topicos_em_alta[0]
             primeiro_topico = primeiro_topico_info['tópico']
-            categoria_topico = primeiro_topico_info.get('categoria', 'A DEFINIR')
-            noticias_pesquisadas = pesquisar_ultimas_noticias(primeiro_topico)
+            categoria_topico = primeiro_topico_info.get('categoria')
+            noticias_pesquisadas = pesquisar_ultimas_noticias(primeiro_topico, categoria_topico)
             if noticias_pesquisadas:
                 conteudo_editado = editar_conteudo(noticias_pesquisadas[:1])
-                imagens_geradas = gerar_imagens(conteudo_editado)
-                noticia_revisada = revisar_geral(conteudo_editado, imagens_geradas)
-                noticia_final = {**noticia_revisada, 'categoria': categoria_topico}
+                noticia_revisada = revisar_geral(conteudo_editado, [])
+                noticia_revisada = revisar_geral(conteudo_editado)
+                noticia_final = {
+                    **noticia_revisada,
+                    'categoria': categoria_topico,
+                    'noticia_completa': noticias_pesquisadas[0].get('resumo', ''),
+                    'fonte': noticias_pesquisadas[0].get('fonte', ''),
+                    'data': noticias_pesquisadas[0].get('data', '')
+                }
                 publicado = publicar_noticia(noticia_final)
                 return jsonify({"status": "Fluxo de geração de notícia completo (simulação)", "resultado": noticia_final})
             else:

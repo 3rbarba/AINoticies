@@ -1,7 +1,6 @@
-python-dotenv
-google-generativeai
-pytrends
-requests
-beautifulsoup4
-Flask
-newspaper3k
+Flask==3.0.0
+Flask-Cors==4.0.0
+google-generativeai==0.4.1
+google-adk==0.2.0
+python-dotenv==1.0.1
+pytrends==4.9.0

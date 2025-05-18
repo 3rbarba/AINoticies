@@ -60,12 +60,11 @@ main img#imagem-noticia {
 }
 
 /* ... seus outros estilos CSS ... */
-/* ... seus outros estilos CSS ... */
 
 #carregando-noticia {
     color: #777;
     font-size: 1.4em; /* Ajuste o tamanho conforme necessário */
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     text-align: center;
     font-family: 'Ancizar Serif', serif; /* Usando a fonte importada */
 }
@@ -77,8 +76,8 @@ main img#imagem-noticia {
 
 .pontos span {
     display: inline-block;
-    width: 0.2em; /* Ajuste o tamanho dos pontos conforme necessário */
-    height: 0.2em; /* Ajuste o tamanho dos pontos conforme necessário */
+    width: 0.4em; /* Ajuste o tamanho dos pontos conforme necessário */
+    height: 0.4em; /* Ajuste o tamanho dos pontos conforme necessário */
     border-radius: 50%;
     background-color: #777;
     margin: 0 0.15em; /* Ajuste a margem entre os pontos conforme necessário */
@@ -95,9 +94,9 @@ main img#imagem-noticia {
 
 @keyframes pular {
     0% {
-        transform: translateY(0);
+        transform: translateY(0.3em); /* Ajuste a altura do pulo conforme necessário */
     }
     100% {
-        transform: translateY(-0.1em); /* Ajuste a altura do pulo conforme necessário */
+        transform: translateY(-0.25em); /* Ajuste a altura do pulo conforme necessário */
     }
 }
