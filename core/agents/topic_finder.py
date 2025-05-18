@@ -4,16 +4,22 @@ from google.adk.tools import google_search
 from utils import call_agent
 
 def identificar_topicos_em_alta():
-    """Identifica os tópicos mais relevantes da semana usando um Agente com busca do Google."""
+    """Identifica os tópicos mais relevantes da semana usando um Agente com busca do Google.
+
+    Returns:
+        list: Uma lista de dicionários, onde cada dicionário contém as chaves 'tópico' e 'categoria'.
+              Retorna uma lista vazia se nenhum tópico for encontrado.
+    """
+
     buscador = Agent(
         name="agente_buscador_topicos",
         model="gemini-2.0-flash",
         instruction="""
-            Você é um assistente de pesquisa de tendências. A sua tarefa é usar a ferramenta de busca do google (google_search)
+            Você é um assistente de pesquisa de tendências. A sua tarefa é usar a ferramenta de busca do Google (google_search)
             para identificar os 50 tópicos mais relevantes e comentados da semana.
             Organize os tópicos por ordem de relevância e atualidade, com base na quantidade e no entusiasmo das notícias e discussões sobre eles.
             Filtre temas sensíveis ou potencialmente ofensivos.
-            Para cada tópico, tente identificar sua categoria principal
+            Para cada tópico, tente identificar sua categoria principal.
             Formato de saída desejado:
             [Número]. **[Tópico]** (Categoria: [categoria]): [Informações adicionais]
         """,
@@ -35,17 +41,16 @@ def identificar_topicos_em_alta():
             if linha.startswith(tuple(f"{i}. **" for i in range(1, 51))):
                 partes_topico = linha.split('**')
                 if len(partes_topico) > 1:
-                    topico_completo = partes_topico[1].strip()
-                    topico = topico_completo
-                    categoria = partes_topico[2].strip() if len(partes_topico) > 2 else "A DEFINIR"
-                    categoria = categoria.split('\n')
-                    for categoria in categoria:
-                        inicio = categoria.find('(')
-                        fim = categoria.find(')')
+                    topico = partes_topico[1].strip()
+                    categoria = "A DEFINIR"  # Valor padrão para categoria
+                    if len(partes_topico) > 2:
+                        categoria_texto = partes_topico[2].strip()
+                        inicio = categoria_texto.find('(')
+                        fim = categoria_texto.find(')')
                         if inicio != -1 and fim != -1 and inicio < fim:
-                            texto_entre_parenteses = categoria[inicio:fim+1].strip()
-                            categoria = texto_entre_parenteses
+                            categoria = categoria_texto[inicio + 1:fim - 1].strip()  # Extrai a categoria sem os parênteses
                     topicos_com_categoria.append({'tópico': topico, 'categoria': categoria})
-    print("Tópicos identificados:", topicos_com_categoria)
-  
-    return topicos_com_categoria[:50]
+    print("Tópicos identificados:")
+    for topico in topicos_com_categoria:
+        print(topico)
+    return topicos_com_categoria

@@ -1,0 +1,181 @@
+header {
+    background-image: url('https://storage.googleapis.com/gweb-developer-goog-blog-assets/images/Banner-Gemini-G4D.original.png');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    text-align: center;
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #dee2e6;
+    font-family: 'Playwrite DK Loopet', sans-serif;
+}
+
+header h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    font-family: 'Playwrite DK Loopet', sans-serif;
+    opacity: 0.0;
+}
+
+header p {
+    font-size: 1.5rem;
+    color: #eee;
+    font-family: 'Playwrite DK Loopet', sans-serif;
+}
+
+body {
+    font-family: 'Ancizar Serif', serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+main {
+    background-color: #bdbdbd;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+#carregando-noticia {
+    color: #777;
+    font-size: 1.4em;
+    margin-bottom: 30px;
+    text-align: center;
+    font-family: 'Ancizar Serif', serif;
+}
+
+.pontos {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.pontos span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #777;
+    margin: 0 4px;
+    animation: pulsate 1s infinite;
+}
+
+.pontos span:nth-child(2) {
+    animation-delay: 0.33s;
+}
+
+.pontos span:nth-child(3) {
+    animation-delay: 0.66s;
+}
+
+@keyframes pulsate {
+    0% {
+        opacity: 0.2;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.2;
+    }
+}
+
+#gerar-noticia-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+    margin-bottom: 20px;
+}
+
+#gerar-noticia-btn:hover {
+    background-color: #218838;
+}
+
+.noticia-bloco {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+    text-align: center;
+}
+
+.noticia-bloco h2 {
+    color: #28a745;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.noticia-bloco p {
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.noticia-bloco img {
+    max-width: 80%;
+    height: auto;
+    margin: 15px auto;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: block;
+}
+
+body {
+    font-family: 'Ancizar Serif', serif;
+    background-color: #cae0f3; /* Um azul bem claro quase branco */
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+main {
+    background-color: #bdbdbd; /* Cor de fundo cinza claro */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    margin-top: 20px;
+}
+footer {
+    text-align: center;
+    padding: 1rem;
+    background-color: #403434; /* Cor de fundo escura */
+    color: white; /* Texto branco */
+    border-top: 1px solid #dee2e6;
+    font-size: 0.9rem;
+    font-family: 'Ancizar Serif', serif;
+}
+#gerar-noticia-btn {
+    background-color: #007bff; /* Azul vibrante */
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px; /* Bordas mais arredondadas */
+    cursor: pointer;
+    font-size: 1.1em; /* Aumentar um pouco a fonte */
+    font-family: 'Ancizar Serif', serif;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sutil sombra */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#gerar-noticia-btn:hover {
+    background-color: #0056b3; /* Azul mais escuro no hover */
+    transform: scale(1.05); /* Pequeno efeito de "zoom" */
+}

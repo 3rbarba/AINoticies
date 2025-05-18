@@ -1,22 +1,36 @@
 from google.adk.agents import Agent
 from google.adk.tools import google_search
 from utils import call_agent
+import json
 
 def agente_coletor_detalhado(topico: str, completo: bool, noticias: str, categoria: str):
-    """Coleta notícias detalhadas sobre um tópico usando um Agente com busca do Google."""
+    """Coleta notícias detalhadas sobre um tópico usando um Agente com busca do Google.
+
+    Args:
+        topico (str): O tópico da notícia.
+        categoria (str): A categoria da notícia.
+        noticias (list): Uma lista de dicionários, onde cada dicionário contém
+                         'título', 'fonte', 'resumo' e 'data' da notícia.
+
+    Returns:
+        dict: Um dicionário contendo a notícia completa, a fonte e a data.
+              Retorna um dicionário vazio se a coleta falhar.
+    """
+
     coletor = Agent(
         name="agente_coletor_detalhado",
         model="gemini-2.0-flash",
         instruction=f"""
             Você é um assistente de coleta de conteúdo jornalístico.
-            Com base nas seguintes notícias resumidas sobre o tópico "{topico}" da categoria "{categoria}", sua tarefa é:
+            Com base nas seguintes notícias resumidas sobre o tópico "{topico}" da categoria "{categoria}",
+            sua tarefa é:
             - Compreender os fatos principais.
             - Gerar um texto completo e informativo da notícia, com no mínimo 4 parágrafos.
             - Indicar a fonte principal da informação.
             - Incluir a data mais precisa possível do fato relatado.
 
             Notícias resumidas disponíveis:
-            {noticias}
+            {json.dumps(noticias, ensure_ascii=False, indent=4)}
 
             Formato de saída desejado:
             Notícia Completa: [texto completo]
