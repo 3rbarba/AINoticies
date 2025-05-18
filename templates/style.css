@@ -1,86 +1,54 @@
-/* ... estilos existentes do body, container, h1 ... */
-h1 {
-    font-family: 'Ancizar Serif', serif; /* Usando a fonte importada */
-    color: #333;
-    text-align: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
+body {
+    font-family: 'Ancizar Serif', serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
 }
 
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    font-family: 'Ancizar Serif', serif;
+    color: #333;
+    text-align: center;
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
 
 main {
     background-color: #fff;
     padding: 20px;
-    border-radius: 8px; /* Arredonda um pouco as bordas da caixa */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Adiciona uma leve sombra para dar profundidade */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
-    text-align: center; /* Centraliza o texto dentro do main */
-    border: 1px solid #ddd; /* Adiciona uma borda cinza clara */
+    text-align: center;
+    border: 1px solid #ddd;
 }
-
-
-main h2#titulo-noticia {
-    color: #28a745; /* Cor para o título da notícia */
-    margin-top: 15px; /* Adicione um pouco de espaço acima */
-    margin-bottom: 10px;
-    font-size: 24px;
-    text-align: center; /* Garante que o título também esteja centralizado */
-}
-
-main p#chamada-noticia {
-    color: #555;
-    line-height: 1.6;
-    margin-bottom: 15px;
-    font-weight: bold; /* Adicionando um peso maior para a chamada */
-    text-align: center; /* Centraliza a chamada */
-}
-
-main p#resumo-noticia {
-    color: #666;
-    line-height: 1.6;
-    margin-bottom: 10px;
-    text-align: center; /* Centraliza o resumo */
-}
-
-main p#categoria-noticia {
-    color: #6c757d; /* Cor para a categoria */
-    font-style: italic;
-    margin-bottom: 10px;
-    text-align: center; /* Centraliza a categoria */
-}
-
-main img#imagem-noticia {
-    max-width: 80%; /* Reduzi um pouco a largura da imagem */
-    height: auto;
-    display: block;
-    margin: 15px auto; /* Centraliza a imagem horizontalmente */
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    margin-bottom: 15px;
-}
-
-/* ... seus outros estilos CSS ... */
 
 #carregando-noticia {
     color: #777;
-    font-size: 1.4em; /* Ajuste o tamanho conforme necessário */
+    font-size: 1.4em;
     margin-bottom: 30px;
     text-align: center;
-    font-family: 'Ancizar Serif', serif; /* Usando a fonte importada */
+    font-family: 'Ancizar Serif', serif;
 }
 
 .pontos {
     display: inline-block;
-    white-space: nowrap; /* Evita que os pontos quebrem de linha */
+    white-space: nowrap;
 }
 
 .pontos span {
     display: inline-block;
-    width: 0.4em; /* Ajuste o tamanho dos pontos conforme necessário */
-    height: 0.4em; /* Ajuste o tamanho dos pontos conforme necessário */
+    width: 0.4em;
+    height: 0.4em;
     border-radius: 50%;
     background-color: #777;
-    margin: 0 0.15em; /* Ajuste a margem entre os pontos conforme necessário */
+    margin: 0 0.15em;
     animation: pular 0.5s infinite alternate;
 }
 
@@ -93,10 +61,101 @@ main img#imagem-noticia {
 }
 
 @keyframes pular {
-    0% {
-        transform: translateY(0.3em); /* Ajuste a altura do pulo conforme necessário */
-    }
-    100% {
-        transform: translateY(-0.25em); /* Ajuste a altura do pulo conforme necessário */
-    }
+    0% { transform: translateY(0.3em); }
+    100% { transform: translateY(-0.25em); }
+}
+
+#gerar-noticia-btn {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#gerar-noticia-btn:hover {
+    background-color: #218838;
+}
+
+.noticia-bloco {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+    text-align: center;
+}
+
+.noticia-bloco h2 {
+    color: #28a745;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.noticia-bloco p {
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.noticia-bloco img {
+    max-width: 80%;
+    height: auto;
+    margin: 15px auto;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: block;
+}
+body {
+    background-color: #f0f2f5;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+main {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.noticia-bloco {
+    border: 1px solid #e9ecef;
+    transition: transform 0.2s ease;
+}
+
+.noticia-bloco:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.noticia-bloco h2 {
+    color: #1a1a1a;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.noticia-bloco p {
+    font-size: 16px;
+    color: #4a4a4a;
+    line-height: 1.8;
+}
+
+#gerar-noticia-btn {
+    background-color: #004d99;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#gerar-noticia-btn:hover {
+    background-color: #003366;
 }

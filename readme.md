@@ -1,4 +1,4 @@
-# 📰 Projeto de Geração de Notícias com Agentes de IA 🤖
+# 📰 Projeto de Apuração de Notícias com Agentes de IA 🤖
 
 Este projeto utiliza agentes de inteligência artificial para automatizar o processo de geração de notícias. Ele identifica tópicos em alta , coleta informações de notícias , edita o conteúdo e revisa o resultado final, escolhendo um tema em alta e buscando uma noticia em alta sobre esse tema.
 
@@ -212,3 +212,7 @@ Contribuições são bem-vindas! Se você tiver sugestões de melhorias ou corre
 ## Licença 📜
 
 Este projeto foi desenvolvido como um exercício divertido proposto pela Alura e é oferecido sem licença. Sinta-se à vontade para explorar, modificar e usar o código como desejar! 🎉
+
+## Considerações finais
+
+Infelizmente não vai ser possível deixar do jeito que eu queria pois eu comecei a fazer hoje.
