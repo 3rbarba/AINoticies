@@ -14,13 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
         criarElementoNoticia(noticia) {
             return `
                 <div class="noticia-bloco">
-                    <h2>${noticia.Título || 'Título não encontrado'}</h2>
-                    <p><strong>${noticia.Chamada || 'Chamada não encontrada'}</strong></p>
-                    <p>${noticia['Notícia Completa'] || 'Notícia completa não encontrada'}</p>
-                    <p><em>${noticia.categoria || 'Sem categoria'}</em> - ${noticia.fonte || 'Fonte não encontrada'}</p>
-                    <p>Data: ${noticia.data || 'Data não encontrada'}</p>
-                    ${noticia['URL da Imagem'] ? `<img src="${noticia['URL da Imagem']}" alt="${noticia.Título || 'Imagem'}" class="noticia-imagem">` : ''}
-                    <button id="gerar-noticia-btn" style="margin-top: 10px;">Gerar Nova Notícia</button>
+                    <h2>${noticia.noticia.fonte || 'Fonte não encontrada'}</h2>
+                    <p><strong>${noticia.noticia.data || 'Data não encontrada'}</strong></p>
+                    <p>${noticia.noticia.noticia_completa || 'Notícia completa não encontrada'}</p>
                 </div>
             `;
         },
@@ -105,13 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         inicializar() {
-        this.elementos.container.addEventListener('click', (event) => {
-            if (event.target && event.target.id === 'gerar-noticia-btn') {
-                this.buscarNoticia();
-            }
-        });
-        this.buscarNoticia();
-    },
+            this.elementos.gerarBtn.addEventListener('click', () => this.buscarNoticia());
+            this.buscarNoticia();
+        }
     };
 
     NoticiaManager.inicializar();
