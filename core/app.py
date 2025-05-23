@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 from google.adk.agents import Agent
 from google.adk.tools import google_search
 from utils import call_agent
@@ -127,11 +128,15 @@ class NewsSystemOptimized:
 
 # Inicializar Flask
 app = Flask(__name__)
+CORS(app)
 news_system = NewsSystemOptimized()
 
 # Armazenamento em memória para status de processamento
 processing_status = {}
 news_cache = {}
+
+def index():
+    return render_template('index.html')
 
 
 @app.route('/', methods=['GET'])
