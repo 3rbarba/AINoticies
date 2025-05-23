@@ -76,13 +76,13 @@ class NewsGenerator {
     loadFallbackTopics() {
         // Tópicos de fallback quando o servidor não está disponível
         this.trendingTopics = [
+            { topico: "Politica Brasil", categoria: "Politica/Brasil" },
             { topico: "Inteligência Artificial", categoria: "Tecnologia" },
             { topico: "Economia Global", categoria: "Economia" },
-            { topico: "Sustentabilidade", categoria: "Meio Ambiente" },
-            { topico: "Saúde Digital", categoria: "Saúde" },
-            { topico: "Eleições 2024", categoria: "Política" },
-            { topico: "Mercado Cripto", categoria: "Finanças" },
-            { topico: "Mudanças Climáticas", categoria: "Ciência" },
+            { topico: "Brics", categoria: "Economia" },
+            { topico: "Saúde", categoria: "Saúde" },
+            { topico: "Mercado financeiro", categoria: "Finanças" },
+            { topico: "Climas", categoria: "Ciência" },
             { topico: "Redes Sociais", categoria: "Tecnologia" },
             { topico: "Energia Renovável", categoria: "Energia" },
             { topico: "Medicina Preventiva", categoria: "Saúde" }
