@@ -3,66 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Notícias IA</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Buscador de Notícias - IA</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <h1>📰 NewsAI</h1>
-            <p>Descubra as últimas notícias com inteligência artificial</p>
-        </header>
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>🤖 Buscador de Notícias</h1>
+            <p>Busque notícias personalizadas sobre qualquer assunto usando IA</p>
+        </div>
 
-        <section class="search-section">
+        <!-- Seção de Pesquisa -->
+        <div class="search-section">
             <div class="search-container">
                 <input 
                     type="text" 
                     id="search-input" 
                     class="search-input" 
-                    placeholder="Digite um assunto para pesquisar notícias..."
-                    maxlength="100"
+                    placeholder="Digite um assunto para buscar uma notícia..."
+                    autocomplete="off"
                 >
                 <button id="search-btn" class="btn btn-primary">
-                    🔍 Pesquisar
+                    🔍 Buscar
                 </button>
             </div>
-            
-            <div class="search-options">
+
+            <!-- Opções -->
+            <div class="options">
                 <div class="checkbox-container">
                     <input type="checkbox" id="auto-trending" checked>
-                    <label for="auto-trending">Usar tópicos em alta se não encontrar</label>
+                    <label for="auto-trending">Usar tópicos em alta automaticamente</label>
                 </div>
                 <button id="trending-btn" class="btn btn-secondary">
-                    🔥 Tópicos em Alta
+                    🔥 Tópico Aleatório
                 </button>
             </div>
-
-            <div id="trending-topics" class="trending-topics hidden">
-                <div class="trending-title">Tópicos em alta:</div>
-                <div id="trending-list" class="trending-list"></div>
-            </div>
-        </section>
-
-        <div id="loading" class="loading">
-            <p>🔍 Buscando notícias
-                <span class="loading-dots">
-                    <span class="loading-dot"></span>
-                    <span class="loading-dot"></span>
-                    <span class="loading-dot"></span>
-                </span>
-            </p>
         </div>
 
-        <div id="news-container" class="news-container"></div>
+        <!-- Seção de Tópicos em Alta -->
+        <div id="trending-topics" class="trending-section hidden">
+            <h3 class="trending-title">🔥 Tópicos em Alta</h3>
+            <div id="trending-list" class="trending-tags">
+                <!-- Tópicos serão inseridos aqui dinamicamente -->
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading hidden">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Gerando sua notícia...</div>
+        </div>
+
+        <!-- Container de Notícias -->
+        <div id="news-container" class="news-container">
+            <!-- Notícias serão inseridas aqui dinamicamente -->
+        </div>
     </div>
-
     <footer class="footer">
-        <p>&copy; 2025 NewsAI - Powered by IA • Feito com ❤️ para você</p>
+        <div class="footer-content">
+            <p>&copy; 2025 Buscador de Notícias - IA ❤ livre de direitos autorais</p>
+            <div class="footer-links">
+                <a href="#" title="Sobre"></a>
+                <a href="#" title="Contato"></a>
+                <a href="#" title="Termos"></a>
+            </div>
+        </div>
     </footer>
-
     <script src="script.js"></script>
 </body>
 </html>

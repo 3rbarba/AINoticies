@@ -24,9 +24,8 @@ class NewsArticle:
     noticia_completa: str = ""
 
 
-class NewsSystemOptimized:
-    """Sistema otimizado de processamento de notícias"""
-    
+class NewsSystem:
+
     def __init__(self, model: str = "gemini-2.0-flash"):
         self.model = model
         self._setup_agents()
@@ -50,7 +49,7 @@ class NewsSystemOptimized:
             tools=[google_search]
         )
     
-    def get_trending_topics(self, limit: int = 10) -> List[Dict[str, str]]:
+    def get_trending_topics(self, limit: int = 30) -> List[Dict[str, str]]:
         """Identifica tópicos em alta de forma otimizada"""
         hoje = date.today().strftime("%Y-%m-%d")
         
@@ -66,7 +65,7 @@ class NewsSystemOptimized:
             ]
         }}
         
-        Filtre temas sensíveis ou ofensivos. Priorize atualidade e relevância.
+        Priorize atualidade e relevância.
         """
         
         try:
@@ -129,7 +128,7 @@ class NewsSystemOptimized:
 # Inicializar Flask
 app = Flask(__name__)
 CORS(app)
-news_system = NewsSystemOptimized()
+news_system = NewsSystem()
 
 # Armazenamento em memória para status de processamento
 processing_status = {}
@@ -159,7 +158,7 @@ def home():
 def get_trending_topics():
     """Endpoint para buscar tópicos em alta"""
     try:
-        limit = request.args.get('limit', default=10, type=int)
+        limit = request.args.get('limit', default=15, type=int)
         limit = min(max(limit, 1), 50)  # Limita entre 1 e 50
         
         topicos = news_system.get_trending_topics(limit)

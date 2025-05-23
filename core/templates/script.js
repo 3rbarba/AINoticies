@@ -52,7 +52,6 @@ class NewsGenerator {
 
     async loadTrendingTopics() {
         try {
-            // Tenta buscar tópicos do servidor
             const response = await fetch(`${this.config.apiUrl}/api/topics`);
             
             if (response.ok) {
@@ -92,10 +91,51 @@ class NewsGenerator {
     renderTrendingTopics() {
         if (this.trendingTopics.length > 0) {
             this.elements.trendingList.innerHTML = this.trendingTopics
-                .map(topic => `<span class="trending-tag">${topic.topico}</span>`)
+                .map((topic, index) => `
+                    <span class="trending-tag clickable" 
+                          data-topic="${topic.topico}" 
+                          data-category="${topic.categoria}"
+                          data-index="${index}">
+                        ${topic.topico}
+                    </span>
+                `)
                 .join('');
             this.elements.trendingTopics.style.display = 'block';
+            
+            // Adiciona event listeners para os tópicos clicáveis
+            this.setupTrendingClickHandlers();
         }
+    }
+
+    setupTrendingClickHandlers() {
+        const trendingTags = this.elements.trendingList.querySelectorAll('.trending-tag.clickable');
+        
+        trendingTags.forEach(tag => {
+            tag.addEventListener('click', async (e) => {
+                if (this.isLoading) return;
+                
+                const topic = e.target.dataset.topic;
+                const category = e.target.dataset.category;
+                
+                // Efeito visual de clique
+                e.target.classList.add('clicked');
+                setTimeout(() => {
+                    e.target.classList.remove('clicked');
+                }, 200);
+                
+                // Gera a notícia para o tópico clicado
+                await this.generateNews(topic, category);
+            });
+
+            // Efeito hover
+            tag.addEventListener('mouseenter', (e) => {
+                e.target.classList.add('hover');
+            });
+
+            tag.addEventListener('mouseleave', (e) => {
+                e.target.classList.remove('hover');
+            });
+        });
     }
 
     async searchNews() {
@@ -127,21 +167,17 @@ class NewsGenerator {
         this.hideError();
 
         try {
-            // Tenta buscar do servidor primeiro
-            let newsData = await this.fetchFromServer(topic, category);
+            const newsData = await this.fetchFromServer(topic, category);
             
-            // Se não conseguir do servidor, usa geração local
-            if (!newsData) {
-                console.log('Gerando notícia localmente...');
-                await this.delay(2000); // Simula tempo de processamento
-                newsData = this.generateFakeNews(topic, category);
+            if (newsData) {
+                this.renderNews(newsData);
+            } else {
+                this.showError('⚠️ Serviço temporariamente indisponível. Tente novamente em alguns instantes.');
             }
-
-            this.renderNews(newsData);
 
         } catch (error) {
             console.error('Erro ao gerar notícia:', error);
-            this.showError('Erro ao gerar notícia. Tente novamente.');
+            this.showError('⚠️ Erro de conexão com o servidor. Verifique sua internet e tente novamente.');
         } finally {
             this.setLoading(false);
         }
@@ -149,7 +185,7 @@ class NewsGenerator {
 
     async fetchFromServer(topic, category) {
         try {
-            // Tenta buscar notícia específica
+            // Tenta buscar notícia específica (GET)
             const response = await fetch(
                 `${this.config.apiUrl}/api/news/${encodeURIComponent(topic)}?categoria=${encodeURIComponent(category)}`,
                 {
@@ -167,7 +203,7 @@ class NewsGenerator {
                 }
             }
 
-            // Se não encontrar, tenta endpoint alternativo
+            // Se não encontrar, tenta endpoint alternativo (POST)
             const postResponse = await fetch(`${this.config.apiUrl}/api/news`, {
                 method: 'POST',
                 headers: {
@@ -191,77 +227,6 @@ class NewsGenerator {
             console.warn('Erro ao conectar com servidor:', error);
             return null;
         }
-    }
-
-    generateFakeNews(topic, category) {
-        const sources = [
-            'Reuters Brasil', 'G1 Notícias', 'Folha de S.Paulo', 
-            'Estado de S.Paulo', 'UOL Notícias', 'CNN Brasil',
-            'BBC Brasil', 'Valor Econômico', 'Exame', 'InfoMoney'
-        ];
-
-        const templates = [
-            `Especialistas analisam as últimas tendências em ${topic.toLowerCase()} e seus impactos na sociedade atual. O tema tem ganhado destaque nos últimos meses devido à sua relevância crescente no cenário nacional e internacional.`,
-            
-            `Novas descobertas sobre ${topic.toLowerCase()} prometem revolucionar o setor nos próximos anos. Pesquisadores e analistas indicam que as mudanças podem ser sentidas em diversas áreas da economia e sociedade.`,
-            
-            `Governo e iniciativa privada anunciam investimentos significativos em ${topic.toLowerCase()}. As medidas visam fortalecer o desenvolvimento sustentável e a inovação tecnológica no país.`,
-            
-            `Mercado global demonstra otimismo com as perspectivas relacionadas a ${topic.toLowerCase()}. Investidores nacionais e internacionais mostram interesse crescente no setor brasileiro.`
-        ];
-
-        const paragraphs = [
-            `As discussões em torno de ${topic.toLowerCase()} têm se intensificado nos últimos meses, com especialistas apontando tanto oportunidades quanto desafios significativos. A comunidade científica, empresarial e acadêmica tem demonstrado interesse crescente no tema, buscando soluções inovadoras e sustentáveis para os principais gargalos identificados.`,
-            
-            `Segundo dados recentes divulgados por institutos de pesquisa, o impacto de ${topic.toLowerCase()} na economia brasileira pode ser substancial. Estudos indicam que o setor tem potencial para gerar milhares de empregos diretos e indiretos, além de atrair investimentos estrangeiros significativos, contribuindo para o desenvolvimento nacional em médio e longo prazo.`,
-            
-            `A população brasileira tem demonstrado interesse crescente no assunto, com pesquisas recentes mostrando que ${topic.toLowerCase()} está entre os temas mais discutidos nas redes sociais e mídias tradicionais. Influenciadores digitais, formadores de opinião e especialistas têm contribuído para ampliar o debate público e conscientizar sobre sua importância.`,
-            
-            `Para os próximos anos, especialistas preveem transformações importantes relacionadas a ${topic.toLowerCase()} no Brasil e no mundo. As mudanças podem afetar diversos setores da economia, desde pequenas empresas até grandes corporações, exigindo adaptação estratégica e preparação adequada por parte de empresários, profissionais e consumidores.`,
-            
-            `Iniciativas governamentais e parcerias público-privadas estão sendo desenvolvidas para maximizar os benefícios de ${topic.toLowerCase()}, ao mesmo tempo em que se busca mitigar possíveis riscos e desafios. O planejamento estratégico e a cooperação entre diferentes setores são considerados fundamentais para o sucesso dessas implementações.`
-        ];
-
-        // Seleciona parágrafos aleatórios
-        const selectedParagraphs = this.shuffleArray([...paragraphs]).slice(0, 4);
-        const template = templates[Math.floor(Math.random() * templates.length)];
-
-        return {
-            noticia: {
-                titulo: `${topic}: ${this.generateRandomTitle(topic)}`,
-                fonte: sources[Math.floor(Math.random() * sources.length)],
-                data: new Date().toLocaleDateString('pt-BR', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                }),
-                categoria: category,
-                noticia_completa: template + '\n\n' + selectedParagraphs.join('\n\n')
-            }
-        };
-    }
-
-    generateRandomTitle(topic) {
-        const titleTemplates = [
-            'Análise Completa das Últimas Tendências',
-            'Perspectivas e Desafios para o Futuro',
-            'Impactos na Economia e Sociedade Brasileira',
-            'Inovações que Podem Transformar o Setor',
-            'Especialistas Debatem Oportunidades e Riscos',
-            'Novos Investimentos Movimentam o Mercado',
-            'Tecnologia e Sustentabilidade em Foco'
-        ];
-        
-        return titleTemplates[Math.floor(Math.random() * titleTemplates.length)];
-    }
-
-    shuffleArray(array) {
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
     }
 
     renderNews(data) {
@@ -289,11 +254,19 @@ class NewsGenerator {
         this.elements.newsContainer.innerHTML = newsHTML;
         this.elements.newsContainer.style.display = 'block';
         
-        // Scroll suave para a notícia
-        this.elements.newsContainer.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
+        // Smooth scroll with delay and viewport check
+        const elementRect = this.elements.newsContainer.getBoundingClientRect();
+        const isInView = elementRect.top >= 0 && elementRect.bottom <= window.innerHeight;
+        
+        if (!isInView) {
+            setTimeout(() => {
+            this.elements.newsContainer.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+            });
+            }, 100);
+        }
     }
 
     setLoading(loading) {
@@ -308,17 +281,13 @@ class NewsGenerator {
     }
 
     showError(message) {
-        const errorHTML = `<div class="error-message">⚠️ ${message}</div>`;
+        const errorHTML = `<div class="error-message">${message}</div>`;
         this.elements.newsContainer.innerHTML = errorHTML;
         this.elements.newsContainer.style.display = 'block';
     }
 
     hideError() {
         // Erro será escondido automaticamente quando nova notícia for carregada
-    }
-
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
 
