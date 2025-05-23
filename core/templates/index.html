@@ -3,30 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Notícias</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Gerador de Notícias IA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Ancizar+Serif:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playwrite+DK+Loopet:wght@100..400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>AAAA</h1>
-        <p>Encontre as últimas notícias com IA de forma rápida e fácil.</p>
-    </header>
     <div class="container">
-        <main>
-            <div id="carregando-noticia">
-                <p>BUSCANDO NOTÍCIAS <span class="pontos"><span></span><span></span><span></span></span></p>
+        <header class="header">
+            <h1>📰 NewsAI</h1>
+            <p>Descubra as últimas notícias com inteligência artificial</p>
+        </header>
+
+        <section class="search-section">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    class="search-input" 
+                    placeholder="Digite um assunto para pesquisar notícias..."
+                    maxlength="100"
+                >
+                <button id="search-btn" class="btn btn-primary">
+                    🔍 Pesquisar
+                </button>
             </div>
-            <button id="gerar-noticia-btn">Gerar Nova Notícia</button>
-            <div id="noticias-container"></div>
-        </main>
+            
+            <div class="search-options">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="auto-trending" checked>
+                    <label for="auto-trending">Usar tópicos em alta se não encontrar</label>
+                </div>
+                <button id="trending-btn" class="btn btn-secondary">
+                    🔥 Tópicos em Alta
+                </button>
+            </div>
+
+            <div id="trending-topics" class="trending-topics hidden">
+                <div class="trending-title">Tópicos em alta:</div>
+                <div id="trending-list" class="trending-list"></div>
+            </div>
+        </section>
+
+        <div id="loading" class="loading">
+            <p>🔍 Buscando notícias
+                <span class="loading-dots">
+                    <span class="loading-dot"></span>
+                    <span class="loading-dot"></span>
+                    <span class="loading-dot"></span>
+                </span>
+            </p>
+        </div>
+
+        <div id="news-container" class="news-container"></div>
     </div>
-    <footer>
-        <p>&copy; 2025 Gerador de Notícias. ❤ espero que gostem</p>
+
+    <footer class="footer">
+        <p>&copy; 2025 NewsAI - Powered by IA • Feito com ❤️ para você</p>
     </footer>
+
     <script src="script.js"></script>
 </body>
 </html>
