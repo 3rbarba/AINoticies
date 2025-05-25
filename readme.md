@@ -2,6 +2,7 @@
 # 📰 Gerador de Notícias com IA 🤖
 
 Este projeto utiliza inteligência artificial para automatizar a geração de notícias. Ele busca os tópicos mais relevantes, coleta informações e apresenta as notícias de forma organizada em uma interface web simples e funcional.
+[![Watch the video]()](https://youtu.be/Y4y_oUvBDeQ)
 
 **Aviso:** Este projeto é um exercício educacional e está sob licença de uso livre. Use, modifique e aprenda com o código! 🎉
 
@@ -20,7 +21,7 @@ O sistema utiliza a API do Google Gemini para gerar notícias a partir de tópic
 
 1. **Pré-requisitos:**
    * Python 3.x instalado.
-   * Chave da API do Google Gemini ([https://makersuite.google.com/](https://makersuite.google.com/)).
+   * Chave da API do Google Gemini ([API](https://makersuite.google.com/)).
 
 2. **Instalação:**
    ```bash
@@ -59,9 +60,10 @@ O sistema utiliza a API do Google Gemini para gerar notícias a partir de tópic
 ├── config.py        # Configuração e chave da API
 ├── flask_app.py     # Cliente de teste da API
 ├── utils.py         # Funções utilitárias
-├── index.html       # Página inicial
-├── style.css        # Estilo visual
-├── script.js        # Lógica frontend
+├── Templates        # pasta onde está o HTML, CSS e javascript
+   ├── index.html       # Página inicial
+   ├── style.css        # Estilo visual
+   ├── script.js        # Lógica frontend
 ```
 
 ## Tecnologias Utilizadas 💻
