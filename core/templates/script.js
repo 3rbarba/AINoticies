@@ -12,7 +12,7 @@ class NewsGenerator {
         };
 
         this.config = {
-            apiUrl: 'http://127.0.0.1:5000',
+            apiUrl: 'http://127.0.0.1:5000', // URL do servidor Flask
             maxRetries: 3,
             retryDelay: 1000
         };
@@ -74,6 +74,20 @@ class NewsGenerator {
 
     loadFallbackTopics() {
         // Tópicos de fallback quando o servidor não está disponível
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'api-warning';
+        warningDiv.innerHTML = '⚠️ Servidor indisponível - esses topicos são apenas exemplos. Por favor, verifique sua conexão com a internet ou tente novamente mais tarde.';
+        // Estilo do aviso
+        warningDiv.style.cssText = `
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 14px;
+        `;
+        this.elements.trendingTopics.insertBefore(warningDiv, this.elements.trendingList);
         this.trendingTopics = [
             { topico: "Politica Brasil", categoria: "Politica/Brasil" },
             { topico: "Inteligência Artificial", categoria: "Tecnologia" },

@@ -39,8 +39,9 @@ class NewsSystem:
             Você é um jornalista especializado em pesquisa e produção de conteúdo.
             Suas funções incluem:
             1. Identificar tópicos em alta
-            2. Pesquisar notícias relevantes
-            3. Gerar conteúdo completo e bem estruturado
+            2. Priorizar tópicos atuais
+            3. Pesquisar notícias relevantes
+            4. Gerar conteúdo completo e bem estruturado
             
             Sempre retorne respostas em JSON válido conforme o formato solicitado.
             Mantenha a qualidade jornalística e verifique as informações.
@@ -49,7 +50,7 @@ class NewsSystem:
             tools=[google_search]
         )
     
-    def get_trending_topics(self, limit: int = 30) -> List[Dict[str, str]]:
+    def get_trending_topics(self, limit: int = 20) -> List[Dict[str, str]]:
         """Identifica tópicos em alta de forma otimizada"""
         hoje = date.today().strftime("%Y-%m-%d")
         
@@ -127,16 +128,12 @@ class NewsSystem:
 
 # Inicializar Flask
 app = Flask(__name__)
-CORS(app)
+CORS(app) # Habilita CORS para que o frontend possa acessar a API
 news_system = NewsSystem()
 
 # Armazenamento em memória para status de processamento
 processing_status = {}
 news_cache = {}
-
-def index():
-    return render_template('index.html')
-
 
 @app.route('/', methods=['GET'])
 def home():
@@ -158,7 +155,7 @@ def home():
 def get_trending_topics():
     """Endpoint para buscar tópicos em alta"""
     try:
-        limit = request.args.get('limit', default=15, type=int)
+        limit = request.args.get('limit', default=20, type=int)
         limit = min(max(limit, 1), 50)  # Limita entre 1 e 50
         
         topicos = news_system.get_trending_topics(limit)
