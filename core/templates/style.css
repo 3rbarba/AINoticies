@@ -22,7 +22,7 @@ body {
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     position: relative;
-    will-change: transform;
+    will-change: transform;;
 }
 
 .header {
@@ -344,23 +344,6 @@ body {
 }
 
 /* Efeitos especiais adicionais */
-.container::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transform: rotate(45deg);
-    animation: shimmer 3s infinite;
-    pointer-events: none;
-}
-
-@keyframes shimmer {
-    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-}
 .footer {
     text-align: center;
     margin-top: 40px;
