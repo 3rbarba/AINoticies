@@ -2,7 +2,7 @@
 # 📰 Gerador de Notícias com IA 🤖
 
 Este projeto utiliza inteligência artificial para automatizar a geração de notícias. Ele busca os tópicos mais relevantes, coleta informações e apresenta as notícias de forma organizada em uma interface web simples e funcional.
-[![Watch the video](https://github.com/3rbarba/AINoticies/blob/main/image.png)](https://youtu.be/Y4y_oUvBDeQ)
+[![Watch the video](https://youtu.be/Y4y_oUvBDeQ)]
 
 **Aviso:** Este projeto é um exercício educacional e está sob licença de uso livre. Use, modifique e aprenda com o código! 🎉
 
