@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buscador de Notícias - IA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <!-- Cabeçalho -->
-        <div class="header">
+ <div class="header">
             <h1>🤖 Buscador de Notícias</h1>
             <p>Busque notícias personalizadas sobre qualquer assunto usando IA</p>
         </div>
 
-        <!-- Seção de Pesquisa -->
         <div class="search-section">
             <div class="search-container">
                 <input 
@@ -29,47 +29,58 @@
                 </button>
             </div>
 
-            <!-- Opções -->
-            <div class="options">
-                <div class="checkbox-container">
+            <div class="controls-container">
+                <label for="auto-trending" class="checkbox-label">
                     <input type="checkbox" id="auto-trending" checked>
-                    <label for="auto-trending">Usar tópicos em alta automaticamente</label>
+                    Gerar Notícia Aleatória (Tópico em Alta)
+                </label>
+                <label for="auto-audio" class="checkbox-label">
+                    <input type="checkbox" id="auto-audio" checked>
+                    Gerar Áudio Automaticamente
+                </label>
+
+                <div class="history-controls">
+                    <label for="history-limit">Histórico (últimas):</label>
+                    <select id="history-limit" class="history-select">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                    <button id="show-history-btn" class="btn btn-secondary">📜 Ver Histórico</button>
                 </div>
-                <button id="trending-btn" class="btn btn-secondary">
-                    🔥 Tópico Aleatório
-                </button>
             </div>
         </div>
-
-        <!-- Seção de Tópicos em Alta -->
-        <div id="trending-topics" class="trending-section hidden">
+        
+        <div id="trending-topics" class="trending-section"> 
             <h3 class="trending-title">🔥 Tópicos em Alta</h3>
-            <div id="trending-list" class="trending-tags">
-                <!-- Tópicos serão inseridos aqui dinamicamente -->
-            </div>
+            <div id="trending-list" class="trending-tags">Buscando Tópicos</div>
         </div>
 
-        <!-- Loading -->
         <div id="loading" class="loading hidden">
             <div class="loading-spinner"></div>
             <div class="loading-text">BUSCANDO SUA NOTÍCIA</div>
         </div>
 
-        <!-- Container de Notícias -->
-        <div id="news-container" class="news-container">
-            <!-- Notícias serão inseridas aqui dinamicamente -->
+        <div id="audio-loading" class="loading hidden">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">🔊 GERANDO ÁUDIO DA NOTÍCIA</div>
         </div>
+
+        <div id="news-container" class="news-container">
+            </div>
     </div>
+
     <footer class="footer">
         <div class="footer-content">
             <p>&copy; 2025 Buscador de Notícias - IA ❤ livre de direitos autorais</p>
             <div class="footer-links">
-                <a href="#" title="Sobre"></a>
+                <p><a href="https://github.com/3rbarba/AINoticies" target="_blank" rel="noopener">GitHub do Projeto</a></p>
                 <a href="#" title="Contato"></a>
-                <a href="#" title="Termos"></a>
             </div>
         </div>
     </footer>
+
     <script src="script.js"></script>
 </body>
 </html>

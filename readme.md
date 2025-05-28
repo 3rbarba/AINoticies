@@ -20,8 +20,8 @@ O sistema utiliza a API do Google Gemini para gerar notícias a partir de tópic
 ## Configuração e Uso 🛠️
 
 1. **Pré-requisitos:**
-   * Python 3.x instalado.
-   * Chave da API do Google Gemini ([API](https://makersuite.google.com/)).
+   * [Python 3.x instalado.(https://www.python.org/downloads/)] 
+   * [Chave da API do Google Gemini. (https://makersuite.google.com/)]
 
 2. **Instalação:**
    ```bash
@@ -54,6 +54,16 @@ O sistema utiliza a API do Google Gemini para gerar notícias a partir de tópic
 * **Backend (Python):** Flask + Google Gemini para geração de conteúdo.
 * **Frontend (HTML, CSS, JavaScript):** Interface de usuário interativa.
 
+## Endpoints 📌
+```
+/api/news [POST] #Processar notícia específica (via POST)
+/api/news/<topic> [GET] #Processar notícia específica (via GET)
+/api/topics [GET] #Buscar tópicos
+/api/news/filter [GET] #Filtrar notícias por categoria
+/api/news/categorias [GET] #Obter categorias disponíveis
+/api/gemini-tts [POST] #Gerar áudio a partir de texto (Gemini TTS)
+```
+
 ## Estrutura do Projeto 📂
 
 ```
@@ -74,12 +84,6 @@ O sistema utiliza a API do Google Gemini para gerar notícias a partir de tópic
 * JavaScript
 * Flask
 * Google Gemini API
-
-## Próximos Passos 🚀
-
-* Melhorias na interface e feedback ao usuário.
-* Classificação e filtro por categoria.
-* Cache persistente com banco de dados.
 
 ## Contribuição 🙏
 

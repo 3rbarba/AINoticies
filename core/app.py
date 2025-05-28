@@ -1,21 +1,49 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-from google.adk.agents import Agent
-from google.adk.tools import google_search
-from utils import call_agent
-from datetime import date, datetime
+from datetime import datetime
 import json
 import re
-import asyncio
 import threading
-from typing import List, Dict, Optional
-from dataclasses import dataclass, asdict
 import time
+from typing import Optional
+from dataclasses import dataclass
+import os
+import io
+import mimetypes
+import struct
+import google.generativeai as genai
 
+# --- ADIÇÃO NECESSÁRIA: Importar a chave da API do config.py ---
+from config import GOOGLE_API_KEY as GEMINI_API_KEY_FROM_CONFIG
 
+try:
+    from google.adk.agents import Agent
+    from google.adk.tools import google_search
+    from utils import call_agent
+except ImportError:
+    print("AVISO: 'google.adk' ou 'utils' não encontradas. A geração de notícias pode falhar.")
+    Agent = None
+    google_search = None
+    def call_agent(agent, prompt): return "{}"
+
+from utils_cache_sqlite import * # Importa as funções atualizadas
+
+# --- Configuração do Flask ---
+app = Flask(__name__)
+CORS(app)
+
+# --- Configuração da API Gemini para TTS ---
+try:
+    if not GEMINI_API_KEY_FROM_CONFIG:
+        print("AVISO: GEMINI_API_KEY não definida em config.py. A funcionalidade TTS falhará.")
+    else:
+        genai.configure(api_key=GEMINI_API_KEY_FROM_CONFIG)
+except Exception as e:
+    print(f"Erro ao configurar Gemini TTS: {e}")
+
+# --- Tuas Classes e Sistema de Notícias Existentes ---
 @dataclass
 class NewsArticle:
-    """Estrutura padronizada para artigos de notícia"""
     titulo: str = ""
     fonte: str = ""
     resumo: str = ""
@@ -23,398 +51,380 @@ class NewsArticle:
     categoria: str = ""
     noticia_completa: str = ""
 
-
-class NewsSystem:
-
+class NewsSystemOptimized:
     def __init__(self, model: str = "gemini-2.0-flash"):
         self.model = model
         self._setup_agents()
-    
+
     def _setup_agents(self):
-        """Configura todos os agentes necessários"""
-        self.unified_agent = Agent(
-            name="agente_unificado_noticias",
-            model=self.model,
-            instruction="""
-            Você é um jornalista especializado em pesquisa e produção de conteúdo.
-            Suas funções incluem:
-            1. Identificar tópicos em alta
-            2. Priorizar tópicos atuais
-            3. Pesquisar notícias relevantes
-            4. Gerar conteúdo completo e bem estruturado
-            
-            Sempre retorne respostas em JSON válido conforme o formato solicitado.
-            Mantenha a qualidade jornalística e verifique as informações.
-            """,
-            description="Agente unificado para processamento completo de notícias",
-            tools=[google_search]
-        )
-    
-    def get_trending_topics(self, limit: int = 20) -> List[Dict[str, str]]:
-        """Identifica tópicos em alta de forma otimizada"""
-        hoje = date.today().strftime("%Y-%m-%d")
-        
+        if Agent:
+            self.unified_agent = Agent(
+                name="agente_unificado_noticias",
+                model=self.model,
+                instruction="""
+                Você é um jornalista especializado em pesquisa e produção de conteúdo.
+                Suas funções incluem:
+                1. Identificar tópicos em alta
+                2. Pesquisar notícias relevantes
+                3. Gerar conteúdo completo e bem estruturado
+                """,
+                tools=[google_search]
+            )
+        else:
+            self.unified_agent = None
+
+    def get_trending_topics(self, limit: int = 20):
+        if not self.unified_agent: return []
+
+        hoje = datetime.today().strftime("%Y-%m-%d")
         prompt = f"""
-        Use google_search para identificar os {limit} tópicos mais relevantes e comentados da semana atual.
-        Data de hoje: {hoje}
-        
-        Retorne APENAS um JSON válido no formato:
+        Use Google Search para identificar os {limit} tópicos mais relevantes e comentados da semana.
+        Data: {hoje}
+        Retorne:
         {{
             "topicos": [
-                {{"topico": "nome do tópico", "categoria": "categoria"}},
-                ...
+                {{"topico": "...", "categoria": "..."}}
             ]
         }}
-        
-        Priorize atualidade e relevância.
         """
-        
         try:
             response = call_agent(self.unified_agent, prompt)
-            if response:
-                json_match = re.search(r'\{.*\}', response, re.DOTALL)
-                if json_match:
-                    data = json.loads(json_match.group())
-                    return data.get('topicos', [])
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group())
+                return data.get("topicos", [])
         except Exception as e:
             print(f"Erro ao buscar tópicos: {e}")
-        
         return []
-    
-    def search_and_process_news(self, topico: str, categoria: str) -> Optional[Dict]:
-        """Busca e processa notícias de forma unificada"""
+
+    def search_and_process_news(self, topico: str, categoria: str) -> Optional[dict]:
+        if not self.unified_agent: return None
+
         prompt = f"""
-        Execute as seguintes etapas para o tópico "{topico}" (categoria: {categoria}):
-        
-        1. Use google_search para encontrar as 3 notícias mais relevantes e recentes
-        2. Selecione a melhor notícia
-        3. Gere um texto completo e informativo (mínimo 4 parágrafos)
-        4. Compile todas as informações
-        
-        Retorne APENAS um JSON válido no formato:
+        Gere uma notícia detalhada para o tópico: {topico} (categoria: {categoria})
+        Formato:
         {{
             "noticia": {{
-                "titulo": "título da notícia",
-                "data": "data da notícia",
-                "fonte": "fontes utilizadas",
+                "titulo": "...",
+                "data": "...",
+                "fonte": "...",
                 "categoria": "{categoria}",
-                "noticia_completa": "texto completo da notícia com mínimo 4 parágrafos"
+                "noticia_completa": "..."
             }},
             "status": "Notícia completa gerada com sucesso!"
         }}
-        
-        Se não encontrar notícias válidas, retorne:
-        {{
-            "noticia": null,
-            "status": "Nenhuma notícia relevante encontrada"
-        }}
         """
-        
         try:
             response = call_agent(self.unified_agent, prompt)
-            if response:
-                json_match = re.search(r'\{.*\}', response, re.DOTALL)
-                if json_match:
-                    data = json.loads(json_match.group())
-                    return data
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group())
         except Exception as e:
-            print(f"Erro ao processar notícia para {topico}: {e}")
-        
-        return {
-            "noticia": None,
-            "status": f"Erro ao processar notícia sobre {topico}"
-        }
+            print(f"Erro ao processar notícia: {e}")
+        return None
+
+# --- Funções Auxiliares para TTS ---
+def convert_to_wav(audio_data: bytes, mime_type: str) -> bytes:
+    """Gera um cabeçalho WAV para os dados de áudio."""
+    parameters = parse_audio_mime_type(mime_type)
+    bits_per_sample = parameters["bits_per_sample"]
+    sample_rate = parameters["rate"]
+    num_channels = 1
+    data_size = len(audio_data)
+    bytes_per_sample = bits_per_sample // 8
+    block_align = num_channels * bytes_per_sample
+    byte_rate = sample_rate * block_align
+    chunk_size = 36 + data_size
+
+    print(f"Convertendo para WAV: bits_per_sample={bits_per_sample}, sample_rate={sample_rate}, num_channels={num_channels}, data_size={data_size}")
+    header = struct.pack(
+        "<4sI4s4sIHHIIHH4sI",
+        b"RIFF", chunk_size, b"WAVE", b"fmt ",
+        16, 1, num_channels, sample_rate,
+        byte_rate, block_align, bits_per_sample,
+        b"data", data_size
+    )
+    return header + audio_data
+
+def parse_audio_mime_type(mime_type: str) -> dict[str, int | None]:
+    """Extrai bits_per_sample e rate do MIME type."""
+    bits_per_sample = 16
+    rate = 24000
+    print(f"Analisando MIME type: {mime_type}")
+    parts = mime_type.split(";")
+    for param in parts:
+        param = param.strip()
+        if param.lower().startswith("rate="):
+            try:
+                rate = int(param.split("=", 1)[1])
+            except (ValueError, IndexError):
+                pass
+        elif param.startswith("audio/L"):
+            try:
+                bits_per_sample = int(param.split("L", 1)[1])
+            except (ValueError, IndexError):
+                pass
+    print(f"Analisado: bits_per_sample={bits_per_sample}, rate={rate}")
+    return {"bits_per_sample": bits_per_sample, "rate": rate}
 
 
-# Inicializar Flask
-app = Flask(__name__)
-CORS(app) # Habilita CORS para que o frontend possa acessar a API
-news_system = NewsSystem()
-
-# Armazenamento em memória para status de processamento
+# --- Inicialização ---
+news_system = NewsSystemOptimized()
+init_cache_db()
 processing_status = {}
-news_cache = {}
 
-@app.route('/', methods=['GET'])
-def home():
-    """Endpoint de boas-vindas"""
-    return jsonify({
-        "message": "Sistema de Notícias API",
-        "version": "2.0",
-        "endpoints": {
-            "trending_topics": "/api/topics",
-            "process_news": "/api/news",
-            "specific_topic": "/api/news/<topic>",
-            "batch_process": "/api/batch",
-            "status": "/api/status/<job_id>"
-        }
-    })
-
-
+# --- Tuas Rotas Existentes ---
 @app.route('/api/topics', methods=['GET'])
-def get_trending_topics():
-    """Endpoint para buscar tópicos em alta"""
+def get_trending():
     try:
-        limit = request.args.get('limit', default=20, type=int)
-        limit = min(max(limit, 1), 50)  # Limita entre 1 e 50
-        
+        limit = min(max(request.args.get('limit', 20, type=int), 1), 50)
         topicos = news_system.get_trending_topics(limit)
-        
         return jsonify({
             "success": True,
-            "timestamp": datetime.now().isoformat(),
-            "count": len(topicos),
-            "topics": topicos
+            "topics": topicos,
+            "timestamp": datetime.now().isoformat()
         })
-    
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
-
+# Rota /api/news/<topic> (GET) - Agora vai buscar as notícias mais recentes pelo título
 @app.route('/api/news/<topic>', methods=['GET'])
-def process_single_news(topic):
-    """Endpoint para processar uma notícia específica"""
+def get_news_by_title_or_generate(topic): # Renomeado para maior clareza
     try:
-        categoria = request.args.get('categoria', 'Geral')
-        
-        # Verifica cache
-        cache_key = f"{topic}_{categoria}"
-        if cache_key in news_cache:
-            cached_result = news_cache[cache_key]
-            cached_result['from_cache'] = True
-            return jsonify(cached_result)
-        
-        resultado = news_system.search_and_process_news(topic, categoria)
-        
-        if resultado:
-            # Adiciona metadados
-            resultado['timestamp'] = datetime.now().isoformat()
-            resultado['topic_requested'] = topic
-            resultado['categoria_requested'] = categoria
-            resultado['from_cache'] = False
-            
-            # Salva no cache
-            news_cache[cache_key] = resultado
-            
-            return jsonify(resultado)
-        else:
-            return jsonify({
-                "success": False,
-                "error": "Falha ao processar notícia",
-                "topic": topic,
-                "timestamp": datetime.now().isoformat()
-            }), 404
-    
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "topic": topic,
-            "timestamp": datetime.now().isoformat()
-        }), 500
+        categoria = request.args.get("categoria", "Geral")
 
+        # Prioriza buscar as últimas notícias do banco de dados pelo título
+        # Isso vai buscar o 'topico' do HTML que na verdade é o 'titulo' da notícia
+        # Vamos buscar por notícias onde o título contenha o 'topic' fornecido
+        latest_news_list = get_latest_news_by_title(topic, limit=1) # Busca a mais recente
+        
+        if latest_news_list:
+            cached_data = latest_news_list[0]
+            # O tópico no cache é o tópico original da busca.
+            # O "título" da notícia no JSON é o que o usuário vê.
+            return jsonify({
+                "noticia": cached_data["noticia"],
+                "from_cache": True,
+                "audio_data_available": cached_data["audio_data"] is not None,
+                "timestamp": datetime.now().isoformat(),
+                "topico_original_do_cache": cached_data["topico"], # Retorna para o frontend
+                "categoria_original_do_cache": cached_data["categoria"] # Retorna para o frontend
+            })
+
+        # Se não encontrar no cache, tenta gerar uma nova notícia
+        result = news_system.search_and_process_news(topic, categoria)
+        if result and result.get("noticia"):
+            news_data = result["noticia"]
+            # Salva no cache com o 'topic' original da busca e a categoria
+            save_news_to_cache(topic, categoria, news_data) 
+            result["from_cache"] = False
+            result["audio_data_available"] = False # Áudio não disponível ainda
+            result["timestamp"] = datetime.now().isoformat()
+            result["topico_original_do_cache"] = topic
+            result["categoria_original_do_cache"] = categoria
+            return jsonify(result)
+
+        return jsonify({"success": False, "error": "Notícia não encontrada ou gerada"}), 404
+    except Exception as e:
+        print(f"Erro na rota /api/news/<topic>: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/news', methods=['POST'])
-def process_news_from_body():
-    """Endpoint para processar notícia via POST com dados no body"""
+def post_news():
     try:
         data = request.get_json()
-        
-        if not data or 'topico' not in data:
+        topico = data.get("topico")
+        categoria = data.get("categoria", "Geral")
+        if not topico:
+            return jsonify({"success": False, "error": "topico obrigatório"}), 400
+
+        # Para POST, ainda vamos tentar buscar a mais recente que corresponde
+        latest_news_list = get_latest_news_by_title(topico, limit=1)
+        if latest_news_list:
+            cached_data = latest_news_list[0]
             return jsonify({
-                "success": False,
-                "error": "Campo 'topico' é obrigatório"
-            }), 400
-        
-        topico = data['topico']
-        categoria = data.get('categoria', 'Geral')
-        
-        resultado = news_system.search_and_process_news(topico, categoria)
-        
-        if resultado:
-            resultado['timestamp'] = datetime.now().isoformat()
-            resultado['topic_requested'] = topico
-            resultado['categoria_requested'] = categoria
-            
-            return jsonify(resultado)
-        else:
-            return jsonify({
-                "success": False,
-                "error": "Falha ao processar notícia",
-                "timestamp": datetime.now().isoformat()
-            }), 404
-    
+                "noticia": cached_data["noticia"],
+                "from_cache": True,
+                "audio_data_available": cached_data["audio_data"] is not None,
+                "timestamp": datetime.now().isoformat(),
+                "topico_original_do_cache": cached_data["topico"],
+                "categoria_original_do_cache": cached_data["categoria"]
+            })
+
+        result = news_system.search_and_process_news(topico, categoria)
+        if result and result.get("noticia"):
+            news_data = result["noticia"]
+            save_news_to_cache(topico, categoria, news_data)
+            result["from_cache"] = False
+            result["audio_data_available"] = False
+            result["timestamp"] = datetime.now().isoformat()
+            result["topico_original_do_cache"] = topico
+            result["categoria_original_do_cache"] = categoria
+            return jsonify(result)
+
+        return jsonify({"success": False, "error": "Notícia não encontrada"}), 404
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }), 500
+        print(f"Erro na rota /api/news (POST): {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
 
-
-def process_batch_async(topics_list, job_id):
-    """Processa múltiplos tópicos de forma assíncrona"""
-    processing_status[job_id] = {
-        "status": "processing",
-        "progress": 0,
-        "total": len(topics_list),
-        "results": [],
-        "started_at": datetime.now().isoformat()
-    }
-    
+# Rota /api/news/history (NOVA ROTA)
+@app.route('/api/news/history', methods=['GET'])
+def news_history():
     try:
-        for i, topic_data in enumerate(topics_list):
-            if isinstance(topic_data, dict):
-                topico = topic_data.get('topico', '')
-                categoria = topic_data.get('categoria', 'Geral')
-            else:
-                topico = str(topic_data)
-                categoria = 'Geral'
-            
-            resultado = news_system.search_and_process_news(topico, categoria)
-            
-            if resultado and resultado.get('noticia'):
-                processing_status[job_id]["results"].append(resultado)
-            
-            # Atualiza progresso
-            processing_status[job_id]["progress"] = i + 1
-            
-            # Pequena pausa para evitar sobrecarga
-            time.sleep(1)
+        limit = request.args.get("limit", 10, type=int)
+        # Garante que o limite não é irrealista (e.g., muito grande ou negativo)
+        limit = max(1, min(limit, 100)) 
         
-        processing_status[job_id]["status"] = "completed"
-        processing_status[job_id]["completed_at"] = datetime.now().isoformat()
+        history = get_news_history(limit)
         
-    except Exception as e:
-        processing_status[job_id]["status"] = "error"
-        processing_status[job_id]["error"] = str(e)
-        processing_status[job_id]["completed_at"] = datetime.now().isoformat()
+        # Prepara os dados para o frontend
+        formatted_history = []
+        for item in history:
+            formatted_history.append({
+                "topico": item["topico"], # O tópico original da busca
+                "categoria": item["categoria"], # A categoria original
+                "noticia": item["noticia"], # O dicionário completo da notícia
+                "audio_data_available": item["audio_data"] is not None,
+                "created_at": item["created_at"]
+            })
 
-
-@app.route('/api/batch', methods=['POST'])
-def process_batch_news():
-    """Endpoint para processar múltiplas notícias de forma assíncrona"""
-    try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({
-                "success": False,
-                "error": "Dados não fornecidos"
-            }), 400
-        
-        # Aceita tanto 'topics' quanto 'topicos'
-        topics_list = data.get('topics', data.get('topicos', []))
-        
-        if not topics_list:
-            return jsonify({
-                "success": False,
-                "error": "Lista de tópicos não fornecida ou vazia"
-            }), 400
-        
-        # Limita o número de tópicos
-        topics_list = topics_list[:20]  # Máximo 20 tópicos
-        
-        # Gera ID único para o job
-        job_id = f"batch_{int(time.time())}_{len(topics_list)}"
-        
-        # Inicia processamento em thread separada
-        thread = threading.Thread(
-            target=process_batch_async,
-            args=(topics_list, job_id)
-        )
-        thread.daemon = True
-        thread.start()
-        
         return jsonify({
             "success": True,
-            "job_id": job_id,
-            "message": "Processamento iniciado",
-            "topics_count": len(topics_list),
-            "status_url": f"/api/status/{job_id}",
-            "timestamp": datetime.now().isoformat()
+            "count": len(formatted_history),
+            "history": formatted_history
         })
-    
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }), 500
+        print(f"Erro na rota /api/news/history: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/status/<job_id>', methods=['GET'])
-def get_batch_status(job_id):
-    """Endpoint para verificar status do processamento em lote"""
-    if job_id not in processing_status:
-        return jsonify({
-            "success": False,
-            "error": "Job ID não encontrado"
-        }), 404
-    
-    status = processing_status[job_id].copy()
-    status['success'] = True
-    status['timestamp'] = datetime.now().isoformat()
-    
-    return jsonify(status)
+# Rota para servir o áudio diretamente do cache
+@app.route('/api/news/audio/<topico_encoded>/<categoria_encoded>', methods=['GET'])
+def get_news_audio(topico_encoded, categoria_encoded):
+    # Decodifica os parâmetros da URL, pois o frontend os enviará encodados
+    topico = topico_encoded # Já vem decodificado pelo Flask para o @app.route
+    categoria = categoria_encoded # Já vem decodificado pelo Flask para o @app.route
 
+    print(f"Tentando buscar áudio para tópico: {topico}, categoria: {categoria}")
 
-@app.route('/api/cache/clear', methods=['POST'])
-def clear_cache():
-    """Endpoint para limpar cache de notícias"""
-    global news_cache
-    cache_size = len(news_cache)
-    news_cache.clear()
-    
-    return jsonify({
-        "success": True,
-        "message": f"Cache limpo: {cache_size} itens removidos",
-        "timestamp": datetime.now().isoformat()
-    })
+    cached_data = get_cached_news(topico, categoria)
+    if cached_data and cached_data["audio_data"]:
+        print(f"Áudio encontrado no cache para {topico}")
+        audio_data = cached_data["audio_data"]
+        mime_type = cached_data["audio_mime_type"] or "audio/wav" # Default para wav
 
+        return send_file(
+            io.BytesIO(audio_data),
+            mimetype=mime_type,
+            as_attachment=False,
+            download_name='noticia_cached.wav'
+        )
+    print(f"Áudio não encontrado no cache para {topico}")
+    return jsonify({"error": "Áudio não encontrado para esta notícia no cache."}), 404
 
-@app.route('/api/cache/status', methods=['GET'])
-def cache_status():
-    """Endpoint para verificar status do cache"""
-    return jsonify({
-        "success": True,
-        "cache_size": len(news_cache),
-        "processing_jobs": len(processing_status),
-        "timestamp": datetime.now().isoformat()
-    })
+# Rota para Gemini TTS - AGORA SALVA O ÁUDIO NO CACHE TAMBÉM
+@app.route('/api/gemini-tts', methods=['POST'])
+def generate_tts_endpoint():
+    if not GEMINI_API_KEY_FROM_CONFIG:
+        print("ERRO: GEMINI_API_KEY não está configurada em config.py.")
+        return jsonify({"error": "Configuração da API Key em falta no servidor (verifique config.py)."}), 500
 
+    data = request.json
+    text_to_speak = data.get('text')
+    voice = data.get('voice', 'Zephyr')
+    # Adicionado: topico e categoria para salvar no cache
+    topico = data.get('topico', 'desconhecido') # Garantindo que vem do frontend
+    categoria = data.get('categoria', 'Geral') # Garantindo que vem do frontend
 
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({
-        "success": False,
-        "error": "Endpoint não encontrado",
-        "timestamp": datetime.now().isoformat()
-    }), 404
+    if not text_to_speak:
+        return jsonify({"error": "Texto não fornecido."}), 400
 
+    try:
+        model_name = "gemini-2.5-flash-preview-tts"
+        
+        contents = [
+            {"parts": [{"text": text_to_speak}]}
+        ]
 
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({
-        "success": False,
-        "error": "Erro interno do servidor",
-        "timestamp": datetime.now().isoformat()
-    }), 500
+        generate_content_config = {
+            "response_modalities": ["AUDIO"],
+            "speech_config": {
+                "voice_config": {
+                    "prebuilt_voice_config": {"voice_name": voice}
+                }
+            },
+        }
 
+        print(f"Gerando áudio para: '{text_to_speak[:60]}...' com voz '{voice}'")
 
-if __name__ == '__main__':
-    print("🚀 Iniciando Sistema de Notícias Flask API...")
-    print("📍 Endpoints disponíveis:")
-    print("   GET  /api/topics - Buscar tópicos em alta")
-    print("   GET  /api/news/<topic> - Processar notícia específica")
-    print("   POST /api/news - Processar notícia via JSON")
-    print("   POST /api/batch - Processar múltiplas notícias")
-    print("   GET  /api/status/<job_id> - Status do processamento")
-    print("   POST /api/cache/clear - Limpar cache")
-    print("   GET  /api/cache/status - Status do cache")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+        audio_chunks = []
+        output_mime_type = "audio/wav"
+
+        model = genai.GenerativeModel(model_name)
+
+        response_stream = model.generate_content(
+            contents=contents,
+            generation_config=generate_content_config,
+            stream=True
+        )
+
+        for chunk in response_stream:
+            if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
+                part = chunk.candidates[0].content.parts[0]
+                if part.inline_data and part.inline_data.data:
+                    inline_data = part.inline_data
+                    data_buffer = inline_data.data
+                    mime_type = inline_data.mime_type
+
+                    file_extension = mimetypes.guess_extension(mime_type)
+
+                    if file_extension is None and "L16" in mime_type:
+                        print("Formato L16 detetado, convertendo para WAV...")
+                        data_buffer = convert_to_wav(data_buffer, mime_type)
+                        output_mime_type = "audio/wav"
+                    else:
+                        output_mime_type = mime_type
+
+                    audio_chunks.append(data_buffer)
+
+        if not audio_chunks:
+            print("Nenhum dado de áudio recebido da Gemini.")
+            return jsonify({"error": "Falha ao gerar áudio."}), 500
+
+        full_audio_data = b"".join(audio_chunks)
+        print(f"Áudio gerado: {len(full_audio_data)} bytes, Tipo: {output_mime_type}")
+
+        # --- SALVA O ÁUDIO NO CACHE APÓS GERAR ---
+        # Usamos o 'topico' e 'categoria' passados do frontend para salvar.
+        # Precisamos da notícia completa para atualizar a entrada no cache.
+        cached_news_data = get_cached_news(topico, categoria)
+        if cached_news_data and cached_news_data["noticia"]:
+            # Atualiza a entrada existente com os dados de áudio
+            save_news_to_cache(topico, categoria, cached_news_data["noticia"], full_audio_data, output_mime_type)
+            print(f"Áudio salvo no cache para tópico '{topico}', categoria '{categoria}'.")
+        else:
+            print(f"AVISO: Notícia para tópico '{topico}', categoria '{categoria}' não encontrada no cache para salvar áudio. Isso pode acontecer se a notícia for nova e o áudio for gerado antes da notícia ser completamente persistida.")
+
+        return send_file(
+            io.BytesIO(full_audio_data),
+            mimetype=output_mime_type,
+            as_attachment=False,
+            download_name='noticia.wav'
+        )
+
+    except Exception as e:
+        print(f"Erro crítico na API /api/gemini-tts: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Erro interno do servidor: {str(e)}"}), 500
+
+# --- Executar o Servidor ---
+if __name__ == "__main__":
+    print("A iniciar o servidor Flask na porta 5000...")
+    app.run(port=5000, debug=True)
