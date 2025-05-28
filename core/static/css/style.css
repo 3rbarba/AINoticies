@@ -254,41 +254,40 @@ body {
 
 /* --- TÓPICOS EM ALTA (Seção consolidada) --- */
 .trending-section {
-    margin: 35px 0;
-    padding: 25px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    border-radius: var(--border-radius-md);
-    border: 1px solid rgba(102, 126, 234, 0.2);
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
 }
 
 .trending-title {
-    color: var(--text-color);
-    font-size: 1.4em;
-    margin-bottom: 20px;
+    font-size: 1.3em;
     font-weight: 600;
+    color: #343a40;
 }
 
 .trending-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    word-break: break-word;
 }
 
 .trending-tag {
-    padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: var(--border-radius-lg);
-    font-size: 14px;
-    color: var(--text-color);
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    transition: all 0.3s ease;
-    font-weight: 500;
-    cursor: pointer;
-    -webkit-user-select: none;
-    user-select: none;
+    max-width: 100%;
+    white-space: normal;
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 20px;
+    line-height: 1.4;
+    text-align: center;
+    flex: 1 1 auto;
 }
 
-.trending-tag:hover,
+.trending-tag:hover {
+    background-color: #ced4da;
+    color: #000;
+}
 .trending-tag.hover {
     background: var(--gradient-main);
     color: white;

@@ -6,11 +6,12 @@
     <title>Buscador de Notícias - IA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="./imagens/icon.png">
 </head>
 <body>
     <div class="container">
- <div class="header">
+        <div class="header">
             <h1>🤖 Buscador de Notícias</h1>
             <p>Busque notícias personalizadas sobre qualquer assunto usando IA</p>
         </div>
@@ -48,12 +49,13 @@
                         <option value="50">50</option>
                     </select>
                     <button id="show-history-btn" class="btn btn-secondary">📜 Ver Histórico</button>
+                    <button id="show-trending-btn" class="btn btn-secondary">🔥 Tópicos em Alta</button>
                 </div>
             </div>
         </div>
         
-        <div id="trending-topics" class="trending-section"> 
-            <h3 class="trending-title">🔥 Tópicos em Alta</h3>
+        <div id="trending-topics" class="trending-section">
+            <h3 class="trending-title">Tópicos em Alta: </h3>
             <div id="trending-list" class="trending-tags">Buscando Tópicos</div>
         </div>
 
@@ -67,20 +69,20 @@
             <div class="loading-text">🔊 GERANDO ÁUDIO DA NOTÍCIA</div>
         </div>
 
-        <div id="news-container" class="news-container">
-            </div>
+        <div id="news-container" class="news-container" style="display: none;"></div>
     </div>
 
     <footer class="footer">
         <div class="footer-content">
-            <p>&copy; 2025 Buscador de Notícias - IA ❤ livre de direitos autorais</p>
+            <p>&copy; 2025 Buscador de Notícias - IA</p>
             <div class="footer-links">
-                <p><a href="https://github.com/3rbarba/AINoticies" target="_blank" rel="noopener">GitHub do Projeto</a></p>
-                <a href="#" title="Contato"></a>
+                <a href="https://github.com/3rbarba/AINoticies" target="_blank" rel="noopener noreferrer">
+                    <img src="./imagens/github.svg" alt="GitHub" class="github-icon"> GitHub do Projeto
+                </a>
             </div>
         </div>
     </footer>
-
-    <script src="script.js"></script>
+    
+    <script src="./js/script.js"></script>
 </body>
 </html>

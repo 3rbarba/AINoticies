@@ -3,9 +3,8 @@ class NewsGenerator {
         this.elements = {
             searchInput: document.getElementById('search-input'),
             searchBtn: document.getElementById('search-btn'),
-            //trendingBtn: document.getElementById('trending-btn'),
-            historyLimit: document.getElementById('history-limit'), // NOVO
-            showHistoryBtn: document.getElementById('show-history-btn'), // NOVO
+            historyLimit: document.getElementById('history-limit'),
+            showHistoryBtn: document.getElementById('show-history-btn'),
             autoTrending: document.getElementById('auto-trending'),
             autoAudio: document.getElementById('auto-audio'),
             loading: document.getElementById('loading'),
@@ -25,14 +24,16 @@ class NewsGenerator {
         this.trendingTopics = [];
         this.isLoading = false;
         this.isAudioLoading = false;
-        this.currentNewsData = null; // Armazena a notícia atualmente exibida em detalhe
+        this.currentNewsData = null;
         this.init();
     }
 
     init() {
         this.setupEventListeners();
+        this.setupDisplayHandlers();
         this.loadTrendingTopics();
-        this.showNewsHistory(); // Carrega o histórico ao iniciar
+        this.elements.trendingTopics.style.display = 'block';
+        this.elements.newsContainer.style.display = 'none';
     }
 
     setupEventListeners() {
@@ -47,16 +48,6 @@ class NewsGenerator {
                 this.searchNews();
             }
         });
-
-        /* // Comentado ou removido pois 'trending-btn' não existe no HTML
-        this.elements.trendingBtn.addEventListener('click', () => {
-            if (!this.isLoading) {
-                this.generateFromTrending();
-            }
-        });
-        */
-
-        // NOVO: Event listener para o botão "Ver Histórico"
         if (this.elements.showHistoryBtn) {
             this.elements.showHistoryBtn.addEventListener('click', () => {
                 if (!this.isLoading) {
@@ -65,10 +56,29 @@ class NewsGenerator {
             });
         }
     }
+// --- Funções de Carregamento (Tópicos) ---
+// loadCategories e renderCategories foram removidas, pois não há mais filtro por categoria
+setupDisplayHandlers() {
+    const trendingSection = document.getElementById('trending-topics');
+    const newsContainer = document.getElementById('news-container');
+    const showHistoryBtn = document.getElementById('show-history-btn');
+    const showTrendingBtn = document.getElementById('show-trending-btn');
 
-    // --- Funções de Carregamento (Tópicos) ---
-    // loadCategories e renderCategories foram removidas, pois não há mais filtro por categoria
+    if (showHistoryBtn) {
+        showHistoryBtn.addEventListener('click', () => {
+            trendingSection.style.display = 'none';
+            newsContainer.style.display = 'block';
+            this.showNewsHistory();
+        });
+    }
 
+    if (showTrendingBtn) {
+        showTrendingBtn.addEventListener('click', () => {
+            newsContainer.style.display = 'none';
+            trendingSection.style.display = 'block';
+        });
+    }
+}
     async loadTrendingTopics() {
         try {
             const response = await fetch(`${this.config.apiUrl}/api/topics`);
@@ -114,10 +124,10 @@ class NewsGenerator {
                 if (this.isLoading) return;
                 const topic = e.target.dataset.topic;
                 const category = e.target.dataset.category;
-                this.elements.searchInput.value = topic; // Preenche o input de busca com o tópico
+                this.elements.searchInput.value = topic;
                 e.target.classList.add('clicked');
                 setTimeout(() => e.target.classList.remove('clicked'), 200);
-                await this.searchNews(category); // Passa a categoria para a busca
+                await this.searchNews(category);
             });
         });
     }
@@ -148,7 +158,6 @@ class NewsGenerator {
 
     // --- Funções de Geração e Renderização de Notícias ---
 
-    // `renderMultipleNews` agora é usada tanto para o histórico quanto para notícias filtradas (se ainda existisse)
     renderMultipleNews(newsArray, title) {
         const newsHTML = `
             <div class="news-section-title"><h2>${title}</h2></div>
@@ -259,27 +268,17 @@ class NewsGenerator {
     }
 
 
-    async searchNews(category = 'Geral') { // Categoria agora é um parâmetro, não vem do select
+    async searchNews(category = 'Geral') {
         const query = this.elements.searchInput.value.trim();
-
+        
         if (query) {
             await this.generateNews(query, category);
         } else if (this.elements.autoTrending.checked && this.trendingTopics.length > 0) {
             const randomTopic = this.trendingTopics[Math.floor(Math.random() * this.trendingTopics.length)];
             this.elements.searchInput.value = randomTopic.topico;
-            await this.generateNews(randomTopic.topico, randomTopic.categoria); // Passa a categoria do tópico em alta
-        } else {
-            this.showError('Digite um assunto para pesquisar, ou ative os tópicos automáticos.');
-        }
-    }
-
-    async generateFromTrending() {
-        if (this.trendingTopics.length > 0) {
-            const randomTopic = this.trendingTopics[Math.floor(Math.random() * this.trendingTopics.length)];
-            this.elements.searchInput.value = randomTopic.topico;
             await this.generateNews(randomTopic.topico, randomTopic.categoria);
         } else {
-            this.showError('Nenhum tópico em alta disponível.');
+            this.displayMessage('Digite um assunto para pesquisar, ou ative os tópicos automáticos.', 'error-message');
         }
     }
 
@@ -287,27 +286,23 @@ class NewsGenerator {
         if (this.isLoading) return;
         this.setLoading(true);
         this.hideError();
+
         try {
-            // Garante que o topic é o título da notícia para buscar corretamente do backend
-            const response = await fetch(`${this.config.apiUrl}/api/news/${encodeURIComponent(topic)}?categoria=${encodeURIComponent(category)}`);
-            if (response.ok) {
-                const newsData = await response.json();
-                if (newsData && newsData.noticia) {
-                    this.currentNewsData = newsData; // Guarda a notícia atual
-                    this.renderNews(newsData);
-                    // Se o áudio já está disponível no cache, toca. Senão, gera (se autoAudio estiver marcado).
-                    if (newsData.audio_data_available) {
-                        // Usa o topico_original_do_cache e categoria_original_do_cache para buscar o áudio
-                        await this.playCachedAudio(newsData.topico_original_do_cache, newsData.categoria_original_do_cache);
-                    } else if (this.elements.autoAudio.checked) {
-                        await this.generateAudio(newsData.noticia, newsData.topico_original_do_cache, newsData.categoria_original_do_cache);
-                    }
-                } else {
-                    this.showError('⚠️ Notícia não encontrada ou gerada. Tente um tópico diferente.');
+            const url = `${this.config.apiUrl}/api/news/${encodeURIComponent(topic)}?categoria=${encodeURIComponent(category)}`;
+            const response = await fetch(url);
+            const newsData = await response.json();
+
+            if (response.ok && newsData.noticia) {
+                this.currentNewsData = newsData;
+                this.renderNews(newsData);
+                
+                if (newsData.audio_data_available) {
+                    await this.playCachedAudio(newsData.topico_original_do_cache, newsData.categoria_original_do_cache);
+                } else if (this.elements.autoAudio.checked) {
+                    await this.generateAudio(newsData.noticia, newsData.topico_original_do_cache, newsData.categoria_original_do_cache);
                 }
             } else {
-                const errorData = await response.json().catch(() => ({ error: `Erro ${response.status}` }));
-                this.showError(`⚠️ Erro ao buscar notícia: ${errorData.error || response.statusText}.`);
+                this.showError('⚠️ Notícia não encontrada ou gerada. Tente um tópico diferente.');
             }
         } catch (error) {
             this.showError('⚠️ Erro de conexão. Verifique sua internet e o backend.');
@@ -317,67 +312,50 @@ class NewsGenerator {
         }
     }
 
-    renderNews(data) {
-        const news = data.noticia;
-        const paragraphs = (news.noticia_completa || '').split('\n\n').filter(p => p.trim());
-        let formattedDate = news.data || 'Data Desconhecida';
+    async generateAudio(newsData, topic, category) {
+        if (!newsData || this.isAudioLoading) return;
+        this.setAudioLoading(true);
+        this.removeAudioPlayerAndError();
+
         try {
-            if (news.data && !isNaN(new Date(news.data))) {
-                formattedDate = new Date(news.data).toLocaleDateString('pt-BR');
+            const text = utils.sanitizeText(`${newsData.titulo}. ${newsData.noticia_completa}`);
+            const response = await fetch(`${this.config.apiUrl}/api/gemini-tts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text,
+                    voice: 'Zephyr',
+                    topico: topic,
+                    categoria: category
+                })
+            });
+
+            if (response.ok) {
+                const audioBlob = await response.blob();
+                this.addAudioPlayer(audioBlob);
+                if (this.currentNewsData) {
+                    this.currentNewsData.audio_data_available = true;
+                    this.renderNews(this.currentNewsData);
+                }
+            } else {
+                const errorData = await response.json().catch(() => ({ error: `Erro ${response.status}` }));
+                this.showAudioError(`Falha ao gerar áudio: ${errorData.error}`);
             }
-        } catch (e) { /* ignore */ }
-
-        // Os valores `topico_original_do_cache` e `categoria_original_do_cache` são usados para os `data-` atributos
-        // para que a API de áudio e a de "Ler Mais" possam buscar a notícia correta no cache.
-        const topicForApi = data.topico_original_do_cache || news.titulo || 'desconhecido';
-        const categoryForApi = data.categoria_original_do_cache || news.categoria || 'Geral';
-
-        // Decide qual botão de áudio mostrar
-        const audioButtonHtml = data.audio_data_available
-            ? `<button id="play-cached-audio-btn" class="btn btn-tertiary" data-topic="${encodeURIComponent(topicForApi)}" data-category="${encodeURIComponent(categoryForApi)}">▶️ Ouvir Áudio</button>`
-            : `<button id="generate-audio-btn" class="btn btn-secondary" data-topic="${encodeURIComponent(topicForApi)}" data-category="${encodeURIComponent(categoryForApi)}">🔊 Gerar Áudio</button>`;
-
-        const newsHTML = `
-            <div class="news-card">
-                <div class="news-header">
-                    <div class="news-source">${news.fonte || 'Fonte Desconhecida'}</div>
-                    <div class="news-date">📅 ${formattedDate}</div>
-                </div>
-                <h2 class="news-title">${news.titulo || 'Sem título'}</h2>
-                <div class="news-content">
-                    ${paragraphs.map(p => `<p>${p}</p>`).join('')}
-                </div>
-                <div class="news-actions">
-                    ${audioButtonHtml}
-                    <div id="audio-loading-inline" style="display: none; margin-left: 10px; color: #555;">Gerando Áudio</div>
-                </div>
-            </div>
-        `;
-        this.elements.newsContainer.innerHTML = newsHTML;
-        this.elements.newsContainer.style.display = 'block';
-        this.scrollToNews();
-        this.attachMainAudioButtonListeners(); // Anexa listeners aqui
+        } catch (error) {
+            this.showAudioError('⚠️ Erro de conexão ao gerar áudio.');
+        } finally {
+            this.setAudioLoading(false);
+        }
     }
 
-    attachMainAudioButtonListeners() {
-        const playCachedBtn = document.getElementById('play-cached-audio-btn');
-        const generateAudioBtn = document.getElementById('generate-audio-btn');
-
-        if (playCachedBtn) {
-            playCachedBtn.addEventListener('click', async () => {
-                if (this.isAudioLoading) return;
-                const topic = decodeURIComponent(playCachedBtn.dataset.topic);
-                const category = decodeURIComponent(playCachedBtn.dataset.category);
-                await this.playCachedAudio(topic, category);
-            });
-        } else if (generateAudioBtn) {
-            generateAudioBtn.addEventListener('click', async () => {
-                if (this.isAudioLoading || !this.currentNewsData || !this.currentNewsData.noticia) return;
-                const topic = decodeURIComponent(generateAudioBtn.dataset.topic);
-                const category = decodeURIComponent(generateAudioBtn.dataset.category);
-                await this.generateAudio(this.currentNewsData.noticia, topic, category);
-            });
-        }
+    displayMessage(message, className, container = this.elements.newsContainer) {
+        const div = document.createElement('div');
+        div.className = className;
+        div.textContent = message;
+        container.innerHTML = '';
+        container.appendChild(div);
+        container.style.display = 'block';
+        this.scrollToNews();
     }
 
     // --- Funções de Geração e Gestão de Áudio (ATUALIZADAS) ---
