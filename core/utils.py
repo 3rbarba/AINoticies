@@ -8,7 +8,19 @@ from google.adk.sessions import InMemorySessionService
 from config import MAX_RETRIES, INITIAL_BACKOFF
 
 def call_agent(agent: Agent, message_text: str) -> str:
-    """Envia uma mensagem para um agente via Runner com lógica de retentativa."""
+    """
+    Envia uma mensagem para um agente via Runner com lógica de retentativa exponencial.
+    
+    Args:
+        agent (Agent): Instância do agente ADK.
+        message_text (str): Texto da mensagem a ser enviada ao agente.
+    
+    Returns:
+        str: Resposta final do agente.
+    
+    Raises:
+        Exception: Se exceder o número máximo de tentativas ou ocorrer erro inesperado.
+    """
     session_service = InMemorySessionService()
     session = session_service.create_session(app_name=agent.name, user_id="user1", session_id="session1")
     runner = Runner(agent=agent, app_name=agent.name, session_service=session_service)

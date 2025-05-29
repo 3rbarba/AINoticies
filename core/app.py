@@ -307,7 +307,7 @@ def news_history():
 # Rota para servir o áudio diretamente do cache
 @app.route('/api/news/audio/<topico_encoded>/<categoria_encoded>', methods=['GET'])
 def get_news_audio(topico_encoded, categoria_encoded):
-    # Decodifica os parâmetros da URL, pois o frontend os enviará encodados
+    # Decodifica os parâmetros da URL, pois o frontend os enviará encodidos
     topico = topico_encoded # Já vem decodificado pelo Flask para o @app.route
     categoria = categoria_encoded # Já vem decodificado pelo Flask para o @app.route
 
@@ -331,6 +331,11 @@ def get_news_audio(topico_encoded, categoria_encoded):
 # Rota para Gemini TTS - AGORA SALVA O ÁUDIO NO CACHE TAMBÉM
 @app.route('/api/gemini-tts', methods=['POST'])
 def generate_tts_endpoint():
+    """
+    Endpoint para gerar áudio TTS usando Gemini e salvar no cache.
+    Recebe texto, voz, tópico e categoria via JSON.
+    Gera o áudio, converte se necessário, salva no cache e retorna o arquivo de áudio.
+    """
     if not GEMINI_API_KEY_FROM_CONFIG:
         print("ERRO: GEMINI_API_KEY não está configurada em config.py.")
         return jsonify({"error": "Configuração da API Key em falta no servidor (verifique config.py)."}), 500
@@ -338,20 +343,17 @@ def generate_tts_endpoint():
     data = request.json
     text_to_speak = data.get('text')
     voice = data.get('voice', 'Zephyr')
-    # Adicionado: topico e categoria para salvar no cache
-    topico = data.get('topico', 'desconhecido') # Garantindo que vem do frontend
-    categoria = data.get('categoria', 'Geral') # Garantindo que vem do frontend
+    topico = data.get('topico', 'desconhecido')
+    categoria = data.get('categoria', 'Geral')
 
     if not text_to_speak:
         return jsonify({"error": "Texto não fornecido."}), 400
 
     try:
         model_name = "gemini-2.5-flash-preview-tts"
-        
         contents = [
             {"parts": [{"text": text_to_speak}]}
         ]
-
         generate_content_config = {
             "response_modalities": ["AUDIO"],
             "speech_config": {
@@ -374,6 +376,7 @@ def generate_tts_endpoint():
             stream=True
         )
 
+        # Processa os chunks de áudio recebidos do Gemini
         for chunk in response_stream:
             if chunk.candidates and chunk.candidates[0].content and chunk.candidates[0].content.parts:
                 part = chunk.candidates[0].content.parts[0]
@@ -384,8 +387,9 @@ def generate_tts_endpoint():
 
                     file_extension = mimetypes.guess_extension(mime_type)
 
+                    # Se for áudio cru (ex: L16), converte para WAV
                     if file_extension is None and "L16" in mime_type:
-                        print("Formato L16 detetado, convertendo para WAV...")
+                        print("Formato L16 detectado, convertendo para WAV...")
                         data_buffer = convert_to_wav(data_buffer, mime_type)
                         output_mime_type = "audio/wav"
                     else:
@@ -400,16 +404,14 @@ def generate_tts_endpoint():
         full_audio_data = b"".join(audio_chunks)
         print(f"Áudio gerado: {len(full_audio_data)} bytes, Tipo: {output_mime_type}")
 
-        # --- SALVA O ÁUDIO NO CACHE APÓS GERAR ---
-        # Usamos o 'topico' e 'categoria' passados do frontend para salvar.
-        # Precisamos da notícia completa para atualizar a entrada no cache.
+        # Salva o áudio no cache após gerar
+        # Usa o 'topico' e 'categoria' fornecidos para atualizar a notícia correspondente
         cached_news_data = get_cached_news(topico, categoria)
         if cached_news_data and cached_news_data["noticia"]:
-            # Atualiza a entrada existente com os dados de áudio
             save_news_to_cache(topico, categoria, cached_news_data["noticia"], full_audio_data, output_mime_type)
             print(f"Áudio salvo no cache para tópico '{topico}', categoria '{categoria}'.")
         else:
-            print(f"AVISO: Notícia para tópico '{topico}', categoria '{categoria}' não encontrada no cache para salvar áudio. Isso pode acontecer se a notícia for nova e o áudio for gerado antes da notícia ser completamente persistida.")
+            print(f"AVISO: Notícia para tópico '{topico}', categoria '{categoria}' não encontrada no cache para salvar áudio. Isso pode ocorrer se a notícia for nova e o áudio for gerado antes da notícia ser persistida.")
 
         return send_file(
             io.BytesIO(full_audio_data),
@@ -426,5 +428,5 @@ def generate_tts_endpoint():
 
 # --- Executar o Servidor ---
 if __name__ == "__main__":
-    print("A iniciar o servidor Flask na porta 5000...")
+    print("Iniciando o servidor Flask na porta 5000...")
     app.run(port=5000, debug=True)

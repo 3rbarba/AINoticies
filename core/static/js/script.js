@@ -499,7 +499,7 @@ setupDisplayHandlers() {
     // --- Funções Auxiliares (Loading, Erro, Scroll) ---
     setLoading(loading) {
         this.isLoading = loading;
-        this.elements.loading.style.display = loading ? 'block' : 'none';
+        this.elements.loading.classList.toggle('hidden', !loading);
         this.elements.searchBtn.disabled = loading;
         if (this.elements.showHistoryBtn) {
             this.elements.showHistoryBtn.disabled = loading;

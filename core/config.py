@@ -16,6 +16,7 @@ MAX_RETRIES = 3
 INITIAL_BACKOFF = 2  # segundos
 
 # Inicialização do Modelo Gemini
+# Tenta inicializar o modelo Gemini se a chave da API estiver disponível.
 gemini_model = None
 if GOOGLE_API_KEY:
     try:
@@ -27,5 +28,5 @@ if GOOGLE_API_KEY:
 else:
     print("Chave da API do Google Generative AI não encontrada no arquivo .env")
 
-# Inicialização do Pytrends
+# Inicialização do Pytrends para pesquisas de tendências do Google.
 pytrends = TrendReq(hl='pt-BR', tz=-180)

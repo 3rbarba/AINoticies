@@ -5,6 +5,10 @@ from datetime import datetime
 DB_PATH = "cache.db"
 
 def init_cache_db():
+    """
+    Inicializa o banco de dados SQLite para cache de notícias.
+    Cria a tabela 'cache_noticias' se não existir, incluindo colunas para dados de áudio e tipo MIME.
+    """
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     # Adicionando a coluna 'audio_data' para armazenar o áudio em BLOB
@@ -24,11 +28,19 @@ def init_cache_db():
     conn.close()
 
 def get_db_connection():
+    """
+    Cria e retorna uma conexão com o banco de dados SQLite.
+    Define o row_factory para sqlite3.Row para acesso por nome às colunas.
+    """
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 def get_cached_news(topico, categoria):
+    """
+    Recupera uma notícia do cache com base no tópico e categoria.
+    Retorna um dicionário com a notícia, dados de áudio e tipo MIME, ou None se não encontrado.
+    """
     conn = get_db_connection()
     cur = conn.cursor()
     # Seleciona também os dados de áudio e tipo MIME
@@ -44,6 +56,10 @@ def get_cached_news(topico, categoria):
     return None
 
 def save_news_to_cache(topico, categoria, noticia_dict, audio_data=None, audio_mime_type=None):
+    """
+    Salva ou atualiza uma notícia no cache.
+    Armazena o dicionário da notícia, dados de áudio (opcional) e tipo MIME (opcional).
+    """
     conn = get_db_connection()
     cur = conn.cursor()
     # Insere ou substitui a notícia, incluindo os dados de áudio e tipo MIME
@@ -55,6 +71,10 @@ def save_news_to_cache(topico, categoria, noticia_dict, audio_data=None, audio_m
     conn.close()
 
 def get_latest_news_by_title(title_part, limit=1):
+    """
+    Busca as notícias mais recentes cujo título contenha o texto especificado.
+    Retorna uma lista de dicionários com informações da notícia, áudio, tipo MIME e data de criação.
+    """
     conn = get_db_connection()
     cur = conn.cursor()
     # Busca notícias que contenham 'title_part' no título, ordenadas pela mais recente
@@ -82,6 +102,10 @@ def get_latest_news_by_title(title_part, limit=1):
     return results
 
 def get_news_history(limit=10):
+    """
+    Retorna o histórico das notícias mais recentes do cache, limitado pelo parâmetro.
+    Cada item inclui dados da notícia, áudio, tipo MIME e data de criação.
+    """
     conn = get_db_connection()
     cur = conn.cursor()
     # Busca todas as notícias, ordenadas pela mais recente, com limite
